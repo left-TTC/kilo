@@ -41,7 +41,7 @@ namespace Brave_web3_solana_task{
             return decentralized_dns::GetIpfsGateWay(prefs); 
         }else{
             LOG(INFO) << "FMC no local ipfs gateway";
-            return "ipfs.io/ipfs";
+            return "https://ipfs.io/";
         }
     }
 
@@ -98,15 +98,15 @@ namespace Brave_web3_solana_task{
             auto [index, found, pre_domain] = Solana_web3::fast_find(maybe_web3_domain, all_root_domains);
 
             if(!std::move(found)){
-                // LOG(INFO) << "this is not a web3 domain";
+                LOG(INFO) << "this is not a web3 domain";
                 std::move(restart_callback).Run(domain, false);
                 return;
             }
 
             DomainCidMap& domain_cid_map = DomainCidMap::instance();
-            const absl::optional<std::string> schroding_cid = domain_cid_map.get_cid(maybe_web3_domain);
+            const absl::optional<Solana_Rpc::DecodeResult> schroding_cid = domain_cid_map.get_result(maybe_web3_domain);
             if(schroding_cid.has_value()){
-                // LOG(INFO) << maybe_web3_domain << "directle open";
+                LOG(INFO) << maybe_web3_domain << "' cid has beed recorded. directly open";
                 std::move(restart_callback).Run(return_url_from_cid(std::move(schroding_cid.value())), true);
                 return;
             }
@@ -114,12 +114,12 @@ namespace Brave_web3_solana_task{
             const std::vector<Solana_web3::Pubkey> roots = rootMap.get_all_pubkey();
             const Solana_web3::Pubkey this_root = roots[std::move(index)];
 
-            // LOG(INFO) << "root key: " << this_root.toBase58();
-            // LOG(INFO) << "pre domains: " << pre_domain;
+            LOG(INFO) << "root key: " << this_root.toBase58();
+            LOG(INFO) << "pre domains: " << pre_domain;
 
             Solana_web3::PDA domain_ipfs_key = Solana_web3::Solana_web3_interface::get_account_from_root(std::move(pre_domain), std::move(this_root));
 
-            // LOG(INFO) << "domain ipfs key: " << domain_ipfs_key.publickey.toBase58();
+            LOG(INFO) << "domain ipfs key: " << domain_ipfs_key.publickey.toBase58();
 
             const Solana_web3::Pubkey ipfs_pubkey = domain_ipfs_key.publickey;
             ipfs_pubkey.get_pubkey_ipfs(url_loader_factory, std::move(restart_callback), maybe_web3_domain, domain);
@@ -240,11 +240,22 @@ namespace Brave_web3_solana_task{
     }
 
 
-    GURL return_url_from_cid(const std::string& cid){
+    GURL return_url_from_cid(const Solana_Rpc::DecodeResult& result){
 
-        const std::string ipfs_gateway = get_local_ipfs_gateway();
+        std::string new_url = get_local_ipfs_gateway();
+        switch(result.record_type){
+            case Solana_Rpc::RecordType::IPFS:
+                new_url += "/ipfs/";
+                break;
+            case Solana_Rpc::RecordType::IPNS:
+                new_url += "/ipns/";
+                break;
+            default:
+                new_url += "/ipfs/";
+                break;
+        }
 
-        const std::string new_url = "https://" + ipfs_gateway + "/" + cid;
+        new_url += result.decoded;
         return GURL(new_url);
     }
 

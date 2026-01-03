@@ -48,15 +48,17 @@ namespace Solana_Rpc{
      * @return  json         obtained data
      *          nullopt      no data has been retrieved
      */
-    std::string decodeAndStripPubkeys(const std::string& base64_str, const DecodeType type) {
+    DecodeResult decodeAndStripPubkeys(const std::string& base64_str, const DecodeType type) {
         std::vector<uint8_t> decoded_bytes;
         if (base64_decode(base64_str.c_str(), decoded_bytes) != 0 || decoded_bytes.size() <= 96) {
-            return "";
+            return {"", RecordType::Error};
         }
 
         size_t cut_length;
+        RecordType record_type = RecordType::Domain;
         switch (type) {
             case DecodeType::Domain:
+                // jump over the vec head
                 cut_length = 108;
                 break;
             case DecodeType::Cid:
@@ -65,10 +67,23 @@ namespace Solana_Rpc{
         }
 
         if (decoded_bytes.size() <= cut_length) {
-            return "";
+            return {"", RecordType::Error};
         }
 
-        return std::string(decoded_bytes.begin() + cut_length, decoded_bytes.end());
+        if(cut_length == 104){
+            LOG(INFO) << "the 105" << decoded_bytes[104];
+            if(decoded_bytes[cut_length] == 0x00){
+                record_type = RecordType::IPFS;
+                LOG(INFO) << "This is a IPFS record";
+            }else{
+                record_type = RecordType::IPNS;
+                LOG(INFO) << "This is a IPNS record";
+            }
+
+            cut_length += 5;
+        }
+
+        return {std::string(decoded_bytes.begin() + cut_length, decoded_bytes.end()), record_type};
     }
 
 
@@ -189,14 +204,20 @@ namespace Solana_Rpc{
     void update_root_map(
         std::string content
     ){
-        LOG(INFO) << "root name info: " << content;
+        // LOG(INFO) << "root name info: " << content;
+        if(content.empty()){
+            return;
+        }
+
         absl::optional<base::Value> parsed = base::JSONReader::Read(content, base::JSONParserOptions(0));
         if (!parsed.has_value()) {
             LOG(ERROR) << "Failed to parse JSON";
+            use_root_prefs();
             return;
         }
         if (!parsed->is_dict()) {
             LOG(ERROR) << "Parsed JSON is not a dictionary";
+            use_root_prefs();
             return;
         }
 
@@ -205,11 +226,13 @@ namespace Solana_Rpc{
         const base::Value::Dict* result_dict = roots_json.FindDict("result");
         if (!result_dict) {
             LOG(ERROR) << "No 'result' field or not a dictionary";
+            use_root_prefs();
             return;
         }
         const base::Value::List* value_list = std::move(result_dict)->FindList("value");
         if (!value_list) {
             LOG(ERROR) << "No 'value' field or not a list";
+            use_root_prefs();
             return;
         }
 
@@ -226,8 +249,16 @@ namespace Solana_Rpc{
                 if(data.size() <= 96){
                     continue;
                 }
-                roots.push_back(decodeAndStripPubkeys(data, Solana_Rpc::DecodeType::Domain));
+                roots.push_back(decodeAndStripPubkeys(data, Solana_Rpc::DecodeType::Domain).decoded);
             }
+        }
+
+        PrefService* prefs = g_browser_process->local_state();
+        std::vector<std::string> local_root_names =  decentralized_dns::GetWnsRootNames(prefs); 
+
+        if(roots.size() != local_root_names.size()){
+            LOG(INFO) << "FMC the local length is mismatched, --- update" << content;
+            decentralized_dns::SetWnsRootNames(prefs, roots);
         }
 
         SolanaRootMap& rootMap = SolanaRootMap::instance();
@@ -266,11 +297,25 @@ namespace Solana_Rpc{
         const std::string* encoded_data = (*data_list)[0].GetIfString();
 
         if(encoded_data){
-            const std::string cid = decodeAndStripPubkeys(*encoded_data, DecodeType::Cid);
-            const std::string ultimate_url_str = "https://ipfs.io/ipns/" + cid + "/#/";
+            const DecodeResult decode_result = decodeAndStripPubkeys(*encoded_data, DecodeType::Cid);
+
+            std::string ultimate_url_str = Brave_web3_solana_task::get_local_ipfs_gateway();
+            switch(decode_result.record_type){
+                case RecordType::IPFS:
+                    ultimate_url_str += "/ipfs/";
+                    break;
+                case RecordType::IPNS:
+                    ultimate_url_str += "/ipns/";
+                    break;
+                default:
+                    ultimate_url_str += "/ipfs/";
+                    break;
+            }
+
+            ultimate_url_str += decode_result.decoded;
 
             Brave_web3_solana_task::DomainCidMap& domain_cid_map = Brave_web3_solana_task::DomainCidMap::instance();
-            domain_cid_map.insert_or_update(maybe_domain, cid);
+            domain_cid_map.insert_or_update(maybe_domain, decode_result);
 
             LOG(INFO) << "url ipfs: " << ultimate_url_str;
 
@@ -298,20 +343,45 @@ namespace Solana_Rpc{
         request_sender->SendJsonRequestWithIpfsStart(request_json, url_loader_factory, std::move(restart_callback), std::move(maybe_domain));
     }
 
+    void use_root_prefs(){
+        PrefService* prefs = g_browser_process->local_state();
+
+        LOG(INFO) << "FFFFFFF will use local";
+
+        if(prefs){
+            std::vector<std::string> local_root_names =  decentralized_dns::GetWnsRootNames(prefs); 
+
+            for(const auto& root: local_root_names){
+                LOG(INFO) << "FMC local root name: "<< root;
+            }
+
+            SolanaRootMap& rootMap = SolanaRootMap::instance();
+            rootMap.set_all(local_root_names);
+        }else{
+            LOG(INFO) << "FMC no local root names";
+            return;
+        }
+    }
 
     void get_all_root_pubkey(
         std::string contents,
         scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory
     ){
-        LOG(INFO)<<"update raw source: "<< contents; 
+
+        if(contents.empty()){
+            LOG(INFO)<<"contents empty, use local root names"<< contents; 
+            use_root_prefs();
+        }
         
         absl::optional<base::Value> parsed = base::JSONReader::Read(contents, base::JSONParserOptions(0));
         if (!parsed.has_value()) {
             LOG(ERROR) << "Failed to parse JSON";
+            use_root_prefs();
             return;
         }
         if (!parsed->is_dict()) {
             LOG(ERROR) << "Parsed JSON is not a dictionary";
+            use_root_prefs();
             return;
         }
 
@@ -320,6 +390,7 @@ namespace Solana_Rpc{
         const base::Value::List* result_list = roots_json.FindList("result");
         if(!result_list){
             LOG(ERROR) << "No 'result' field or not a list";
+            use_root_prefs();
             return;
         }
 
@@ -353,6 +424,7 @@ namespace Solana_Rpc{
         }
 
         if(pubkeys.size() == 0){
+            use_root_prefs();
             return;
         }
         SolanaRootMap& rootMap = SolanaRootMap::instance();
@@ -390,6 +462,8 @@ namespace Solana_Rpc{
 
 
     //======================= rpc ==========================
+    // What I can confirmed is that function simple url sender has its own 
+    // timeout logic
 
 
 
@@ -408,17 +482,17 @@ namespace Solana_Rpc{
         net::NetworkTrafficAnnotationTag traffic_annotation =
             net::DefineNetworkTrafficAnnotation("solana_api_request", R"(
                 semantics {
-                sender: "Chromium Browser"
-                description: "Sends a JSON RPC request to the Solana Devnet API."
-                trigger: "User initiated action or internal browser process."
-                data: "JSON RPC request payload, typically method name and parameters for blockchain interaction."
-                destination: OTHER
-                destination_other: "Solana Devnet API"
+                    sender: "Chromium Browser"
+                    description: "Sends a JSON RPC request to the Solana Devnet API."
+                    trigger: "User initiated action or internal browser process."
+                    data: "JSON RPC request payload, typically method name and parameters for blockchain interaction."
+                    destination: OTHER
+                    destination_other: "Solana Devnet API"
                 }
                 policy {
-                cookies_allowed: NO
-                setting_and_preference_disabled_by_policy: false
-                policy_exception_justification: "This request is part of a feature that interacts with a public blockchain API. No sensitive user data is sent unless explicitly provided by the user within the JSON payload."
+                    cookies_allowed: NO
+                    setting_and_preference_disabled_by_policy: false
+                    policy_exception_justification: "This request is part of a feature that interacts with a public blockchain API. No sensitive user data is sent unless explicitly provided by the user within the JSON payload."
                 }
             )");
 

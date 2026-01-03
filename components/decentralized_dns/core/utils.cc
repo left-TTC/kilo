@@ -6,7 +6,7 @@
 #include "brave/components/decentralized_dns/core/utils.h"
 
 #include <string_view>
-#include <string>
+
 
 #include "brave/components/decentralized_dns/core/constants.h"
 #include "brave/components/decentralized_dns/core/pref_names.h"
@@ -33,7 +33,9 @@ void RegisterLocalStatePrefs(PrefRegistrySimple* registry) {
     registry->RegisterIntegerPref(kWnsResolveMethod,
                                 static_cast<int>(ResolveMethodTypes::ENABLED));
 
-    registry->RegisterStringPref(kWnsResolveMethodGateWay, "ipfs.io/ipns");
+    registry->RegisterStringPref(kWnsResolveMethodGateWay, "https://ipfs.io");
+
+    registry->RegisterListPref(kWnsResolveRootNamesMethod);
 
   // Register prefs for migration.
   // Added 12/2023 to reset SNS pref to re-opt in with updated interstitial.
@@ -164,6 +166,8 @@ bool IsSnsResolveMethodEnabled(PrefService* local_state) {
   return GetSnsResolveMethod(local_state) == ResolveMethodTypes::ENABLED;
 }
 
+
+
 ResolveMethodTypes GetWnsResolveMethod(PrefService* local_state) {
   return static_cast<ResolveMethodTypes>(
       local_state->GetInteger(kWnsResolveMethod));
@@ -187,6 +191,36 @@ bool IsWnsResolveMethodEnabled(PrefService* local_state) {
 
 std::string GetIpfsGateWay(PrefService* local_state) {
     return local_state->GetString(kWnsResolveMethodGateWay);
+}
+
+std::vector<std::string> GetWnsRootNames(PrefService* local_state) {
+    std::vector<std::string> result;
+
+    const base::Value::List& list =
+        local_state->GetList(kWnsResolveRootNamesMethod);
+
+    for (const base::Value& value : list) {
+        if (value.is_string()) {
+            result.push_back(value.GetString());
+            LOG(INFO) << "FMC read prefs' root name" << value.GetString();
+        }
+    }
+
+    return result;
+}
+
+void SetWnsRootNames(PrefService* local_state,
+                    const std::vector<std::string>& root_names
+) {
+    base::Value::List list;
+    for (const auto& root_name : root_names) {
+        LOG(INFO) << "FMC set new root name: " << root_name;
+        list.Append(root_name);
+    }
+
+    local_state->SetList(kWnsResolveRootNamesMethod, std::move(list));
+
+    LOG(INFO) << "WnsRootNames fully reset with " << root_names.size() << " entries.";
 }
 
 }  // namespace decentralized_dns

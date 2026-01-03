@@ -119,11 +119,23 @@ namespace Solana_Rpc{
         Cid,
     };
 
+    enum class RecordType {
+        IPFS,
+        IPNS,
+        Domain,
+        Error,
+    };
+
+    struct DecodeResult {
+        std::string decoded;
+        RecordType record_type;
+    };
+
     int base64_char_value(char c);
 
     int base64_decode(const char *input, unsigned char **output, size_t *output_len);
 
-    std::string decodeAndStripPubkeys(const std::string& base64_str, const DecodeType type);
+    DecodeResult decodeAndStripPubkeys(const std::string& base64_str, const DecodeType type);
 
     base::Value::Dict build_request_json(
         const std::string& method,
@@ -153,6 +165,8 @@ namespace Solana_Rpc{
         base::OnceCallback<void(const GURL&, bool is_web3_domain)> restart_callback,
         std::string maybe_domain
     );
+
+    void use_root_prefs();
 
     void get_all_root_pubkey(
         std::string contents,

@@ -7,6 +7,8 @@
 #define BRAVE_COMPONENTS_DECENTRALIZED_DNS_CORE_UTILS_H_
 
 #include <string_view>
+#include <string>
+#include <vector>
 
 #include "brave/components/decentralized_dns/core/constants.h"
 
@@ -42,9 +44,12 @@ ResolveMethodTypes GetSnsResolveMethod(PrefService* local_state);
 bool IsSnsResolveMethodAsk(PrefService* local_state);
 bool IsSnsResolveMethodEnabled(PrefService* local_state);
 
-
+ResolveMethodTypes GetWnsResolveMethod(PrefService* local_state);
 bool IsWnsResolveMethodEnabled(PrefService* local_state);
 std::string GetIpfsGateWay(PrefService* local_state);
+
+std::vector<std::string> GetWnsRootNames(PrefService* local_state);
+void SetWnsRootNames(PrefService* local_state, const std::vector<std::string>& rootNames);
 
 }  // namespace decentralized_dns
 

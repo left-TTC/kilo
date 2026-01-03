@@ -19,12 +19,12 @@ namespace Brave_web3_solana_task{
     public:
         static DomainCidMap& instance();
     
-        void insert_or_update(const std::string& domain, const std::string& cid) {
+        void insert_or_update(const std::string& domain, const Solana_Rpc::DecodeResult& result) {
             base::AutoLock lock(lock_);
-            domain_cid_map_[domain] = cid;
+            domain_cid_map_[domain] = result;
         }
     
-        absl::optional<std::string> get_cid(const std::string& domain) const {
+        absl::optional<Solana_Rpc::DecodeResult> get_result(const std::string& domain) const {
             base::AutoLock lock(lock_);
             auto it = domain_cid_map_.find(domain);
             if (it != domain_cid_map_.end()) {
@@ -44,7 +44,7 @@ namespace Brave_web3_solana_task{
         ~DomainCidMap();
     
         mutable base::Lock lock_;
-        std::map<std::string, std::string> domain_cid_map_;
+        std::map<std::string, Solana_Rpc::DecodeResult> domain_cid_map_;
     };
 
     bool if_use_WNS();
@@ -64,7 +64,7 @@ namespace Brave_web3_solana_task{
         const GURL& new_url
     );
 
-    GURL return_url_from_cid(const std::string& cid);
+    GURL return_url_from_cid(const Solana_Rpc::DecodeResult& result);
 
     std::string ExtractPathFromSearchURL(const GURL& url);
     
