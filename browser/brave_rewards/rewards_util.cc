@@ -13,7 +13,7 @@ namespace brave_rewards {
 
 bool IsSupportedForProfile(Profile* profile, IsSupportedOptions options) {
     DCHECK(profile);
-    #if defined(ENABLE_REWARDS_CHECK)
+    #if defined(ENABLE_REWARDS_ORIGIN)
         return profile->IsRegularProfile() &&
                 IsSupported(profile->GetPrefs(), options);
     #else

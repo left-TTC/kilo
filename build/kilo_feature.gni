@@ -1,0 +1,12 @@
+declare_args(){
+
+    enable_browser_brave_talk = false
+
+    enable_browser_brave_VPN = false
+
+    enable_browser_brave_leo = false
+    
+    enable_browser_brave_talk = false
+
+    enable_browser_brave_rewards = false
+}

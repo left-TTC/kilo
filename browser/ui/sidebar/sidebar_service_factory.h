@@ -40,7 +40,7 @@ class SidebarServiceFactory : public BrowserContextKeyedServiceFactory {
       SidebarItem::BuiltInItemType::kChatUI,
 #endif
 
-#ifdef ENABLE_TALK_CHECK
+#ifdef ENABLE_TALK_ORIGIN
     SidebarItem::BuiltInItemType::kBraveTalk,
 #endif
       

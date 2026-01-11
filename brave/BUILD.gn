@@ -224,8 +224,8 @@ if (is_win) {
       deps = [ "//chrome/installer/setup" ]
     }
     sign("signed_brave_exe") {
-      sources = [ "$root_out_dir/nexanon.exe" ]
-      outputs = [ "$root_out_dir/presigned_binaries/nexanon.exe" ]
+      sources = [ "$root_out_dir/kilo.exe" ]
+      outputs = [ "$root_out_dir/presigned_binaries/kilo.exe" ]
       deps = [ "//brave/build/win:copy_exe" ]
     }
     sign("signed_chrome_dll") {

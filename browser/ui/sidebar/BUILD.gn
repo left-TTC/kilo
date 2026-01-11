@@ -6,14 +6,14 @@
 import("//brave/components/ai_chat/core/common/buildflags/buildflags.gni")
 import("//build/config/ui.gni")
 import("//extensions/buildflags/buildflags.gni")
-import("//brave/build/nexanon_feature.gni")
+import("//brave/build/kilo_feature.gni")
 
 assert(toolkit_views)
 
 
 config("enable_talk_check_config") {
-    if (nexanon_enable_brave_talk) {
-        defines = [ "ENABLE_TALK_CHECK" ]
+    if (enable_browser_brave_talk) {
+        defines = [ "ENABLE_TALK_ORIGIN" ]
     }
 }
 

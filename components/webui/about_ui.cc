@@ -26,7 +26,7 @@ std::string ReplaceAboutUIChromeURLs(std::string chrome_urls) {
   constexpr std::string_view kBraveInternalPagesHeader =
       "List of brave://internals pages";
   constexpr std::string_view kChromeURLList = ">chrome://";
-  constexpr std::string_view kBraveURLList = ">nexanon://";
+  constexpr std::string_view kBraveURLList = ">kilo://";
 
   RE2::GlobalReplace(&chrome_urls, kChromeHeader, kBraveHeader);
   RE2::GlobalReplace(&chrome_urls, kChromePagesHeader, kBravePagesHeader);

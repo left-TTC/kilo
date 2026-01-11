@@ -6,6 +6,7 @@
 import("//extensions/buildflags/buildflags.gni")
 import("//testing/test.gni")
 import("//brave/build/config.gni")
+import("//brave/build/kilo_feature.gni")
 
 
 source_set("brave_rewards") {
@@ -66,8 +67,8 @@ source_set("brave_rewards_impl") {
 }
 
 config("enable_rewards_check_config") {
-    if (nexanon_enable_brave_rewards) {
-        defines = [ "ENABLE_REWARDS_CHECK" ]
+    if (enable_browser_brave_rewards) {
+        defines = [ "ENABLE_REWARDS_ORIGIN" ]
     }
 }
 

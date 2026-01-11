@@ -17,7 +17,7 @@ declare_args() {
   sparkle_eddsa_private_key = ""
   sparkle_eddsa_public_key = ""
 
-  brave_product_name = "nexanon"
+  brave_product_name = "kilo"
   brave_exe = ""
   brave_version_major = ""
   brave_version_minor = ""

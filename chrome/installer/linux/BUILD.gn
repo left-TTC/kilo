@@ -173,7 +173,7 @@ action("merge_rpm_dependencies") {
 strip_binary("strip_chrome_binary") {
   binary_input = "$root_out_dir/chrome"
   deps = [ "//chrome" ]
-  binary_input = "$root_out_dir/nexanon" symbol_output = "$root_out_dir/brave.debug" stripped_binary_output = "$root_out_dir/brave.stripped" deps += strip_chrome_binary_deps
+  binary_input = "$root_out_dir/kilo" symbol_output = "$root_out_dir/brave.debug" stripped_binary_output = "$root_out_dir/brave.stripped" deps += strip_chrome_binary_deps
 }
 
 strip_binary("strip_chrome_crashpad_handler") {

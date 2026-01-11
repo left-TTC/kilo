@@ -41,7 +41,7 @@ export async function rebrand() {
     const name = config.project.name
 
     if(name.length === 0){
-        console.log(chalk.red("rebrand your name in ", chalk.bgYellow("//nexanon_build/config.json")))
+        console.log(chalk.red("rebrand your name in ", chalk.bgYellow("//project_build/config.json")))
     }
 
     const browser_config = JSON.parse(fs.readFileSync(configPath, "utf-8"));

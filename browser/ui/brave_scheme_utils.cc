@@ -9,7 +9,7 @@
 
 namespace {
 constexpr char16_t kChromeSchema16[] = u"chrome://";
-constexpr char16_t kBraveSchema16[] = u"nexanon://";
+constexpr char16_t kBraveSchema16[] = u"kilo://";
 }  // namespace
 
 namespace brave_utils {

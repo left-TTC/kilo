@@ -16,7 +16,7 @@ export enum BraveState {
 
 export function checkBrave(
     bravePath: string,
-    nexanonConfig: Config,
+    config: Config,
 ): BraveState {
 
     const resolved = path.resolve(bravePath);
@@ -36,7 +36,7 @@ export function checkBrave(
         return BraveState.readError;
     }
 
-    if (pkg.version != nexanonConfig.brave.version) {
+    if (pkg.version != config.brave.version) {
         return BraveState.versionDismatched;
     }
 

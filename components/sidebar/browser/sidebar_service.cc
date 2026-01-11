@@ -597,7 +597,7 @@ std::vector<SidebarItem> SidebarService::GetDefaultSidebarItems() const {
 SidebarItem SidebarService::GetBuiltInItemForType(
     SidebarItem::BuiltInItemType type) const {
   switch (type) {
-#ifdef ENABLE_TALK_CHECK
+#ifdef ENABLE_TALK_ORIGIN
     case SidebarItem::BuiltInItemType::kBraveTalk:
       if (!prefs_->GetBoolean(kBraveTalkDisabledByPolicy)) {
         return SidebarItem::Create(

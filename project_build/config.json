@@ -6,7 +6,7 @@
         "company": "AAAA"
     },
     "brave": {
-        "path": "D:/brave/src/brave",
+        "path": "/home/f/myproject/Brave/src/brave",
         "version": "1.87.3"
     },
     "features": {

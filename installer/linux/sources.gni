@@ -18,7 +18,7 @@ common_packaging_files_excluded_sources = [
 ]
 
 brave_packaging_files_executables = [
-  "$root_out_dir/nexanon",
+  "$root_out_dir/kilo",
   "$root_out_dir/brave_sandbox",
 ]
 

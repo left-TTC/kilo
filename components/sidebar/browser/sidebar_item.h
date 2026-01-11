@@ -22,7 +22,7 @@ struct SidebarItem {
   // items.
   enum class BuiltInItemType {
     kNone = 0,
-#ifdef ENABLE_TALK_CHECK
+#ifdef ENABLE_TALK_ORIGIN
     kBraveTalk,
 #endif
     kWallet,

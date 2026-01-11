@@ -159,7 +159,7 @@ void SidebarItemsContentsView::UpdateAllBuiltInItemsViewState() {
 
     // If browser window has tab that loads brave talk, brave talk panel icon
     // will use colored one for normal state also.
-#ifdef ENABLE_TALK_CHECK
+#ifdef ENABLE_TALK_ORGIN
     if (item.built_in_item_type ==
         sidebar::SidebarItem::BuiltInItemType::kBraveTalk) {
       UpdateItemViewStateAt(item_index,
@@ -577,7 +577,7 @@ ui::ImageModel SidebarItemsContentsView::GetImageForBuiltInItems(
   switch (type) {
     case sidebar::SidebarItem::BuiltInItemType::kWallet:
       return get_image_model(kLeoProductBraveWalletIcon, state);
-#ifdef ENABLE_TALK_CHECK
+#ifdef ENABLE_TALK_ORGIN
     case sidebar::SidebarItem::BuiltInItemType::kBraveTalk:
       return get_image_model(kLeoProductBraveTalkIcon, state);
 #endif

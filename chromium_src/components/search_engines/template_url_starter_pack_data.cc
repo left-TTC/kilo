@@ -25,7 +25,7 @@
 namespace {
 
 constexpr char kChromeSchema[] = "chrome://";
-constexpr char kBraveSchema[] = "nexanon://";
+constexpr char kBraveSchema[] = "kilo://";
 
 }  // namespace
 

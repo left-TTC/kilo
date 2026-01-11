@@ -3,11 +3,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at https://mozilla.org/MPL/2.0/.
 
-import("//brave/build/nexanon_feature.gni")
+import("//brave/build/kilo_feature.gni")
 
 config("enable_talk_check_config") {
-    if (nexanon_enable_brave_talk) {
-        defines = [ "ENABLE_TALK_CHECK" ]
+    if (enable_browser_brave_talk) {
+        defines = [ "ENABLE_TALK_ORGIN" ]
     }
 }
 
