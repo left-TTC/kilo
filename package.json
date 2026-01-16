@@ -6,7 +6,8 @@
         "getbrave": "tsx ./project_build/commands/scripts/getBrave.ts",
         "build": "tsx ./project_build/commands/scripts/build.ts",
         "applyPatch": "tsx ./project_build/commands/scripts/applyPatch.ts",
-        "rebrand": "tsx ./project_build/commands/scripts/rebrand.ts"
+        "rebrand": "tsx ./project_build/commands/scripts/rebrand.ts",
+        "exe": "tsx ./project_build/commands/scripts/packExe.ts"
     },
     "devDependencies": {
         "@types/node": "^25.0.3",
