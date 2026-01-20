@@ -10,7 +10,7 @@ import("//build/buildflag_header.gni")
 import("buildflags.gni")
 
 declare_args() {
-  service_key_aichat = "fanmochengdisable"
+  service_key_aichat = "  https://localhost"
 }
 
 if (is_official_build) {

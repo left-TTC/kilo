@@ -16,7 +16,7 @@ declare_args() {
 }
 
 if (is_official_build) {
-  assert(brave_services_key_id != "fanmochengdisable")
+  assert(brave_services_key_id != "  https://localhost")
 }
 
 buildflag_header("buildflags") {
