@@ -17,6 +17,8 @@ import org.chromium.chrome.browser.settings.BraveLeoPreferences;
 import org.chromium.components.prefs.PrefService;
 import org.chromium.components.user_prefs.UserPrefs;
 
+import org.chromium.kilo.KiloFeatures;
+
 public class BraveLeoPrefUtils {
     private static final String TAG = "BraveLeoPrefUtils";
 
@@ -137,7 +139,7 @@ public class BraveLeoPrefUtils {
     }
 
     public static boolean isLeoEnabled() {
-        if (!ChromeFeatureList.isEnabled(BraveFeatureList.AI_CHAT)) {
+        if (!ChromeFeatureList.isEnabled(BraveFeatureList.AI_CHAT) || !KiloFeatures.isBraveAIEnable()) {
             return false;
         }
 

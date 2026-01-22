@@ -34,8 +34,8 @@ public class SponsoredImageUtil {
                                     1300,
                                     720,
                                     new ImageCredit(
-                                            "Dylan Malval",
-                                            "https://www.instagram.com/vass_captures/"))));
+                                            "ZiXvan Liao",
+                                            "https://github.com/xuanBOSS/"))));
 
     private static int sBackgroundImageIndex = getRandomIndex(sBackgroundImages.size());
 

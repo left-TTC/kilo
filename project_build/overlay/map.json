@@ -1,5 +1,6 @@
 {
     "app": "src/brave/app",
+    "android": "src/brave/android",
     "installer": "src/brave/installer",
     "brand": "src/brave/app/theme/brave",
     "brave": "src/brave",
