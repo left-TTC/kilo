@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="108" height="108" viewBox="0 0 108 108">
+
+  <!-- K -->
+  <path
+    d="M25 40 L25 68 L35 68 L35 58 L45 68 L53 68 L40 53 L53 40 L45 40 L35 50 L35 40 Z"
+    fill="#000000"
+  />
+
+  <!-- i -->
+  <path
+    d="M55 53 L55 68 L59 68 L59 53 Z M55 48 L55 50 L59 50 L59 48 Z"
+    fill="#000000"
+  />
+
+  <!-- l -->
+  <path
+    d="M62 53 L62 68 L66 68 L66 53 Z"
+    fill="#000000"
+  />
+
+  <!-- o -->
+  <path
+    d="M70 53 L85 53 L85 68 L70 68 Z"
+    fill="#000000"
+  />
+
+</svg>
