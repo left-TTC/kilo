@@ -73,6 +73,10 @@ public class FilterListServiceFactory {
         FilterListServiceFactoryJni.get().SetRPCGateway(value);
     }
 
+    public String[] getRootNames() {
+        return FilterListServiceFactoryJni.get().GetRootNames();
+    }
+
     @NativeMethods
     interface Natives {
         long getInterfaceToFilterListService(Profile profile);
@@ -80,5 +84,6 @@ public class FilterListServiceFactory {
         void SetGateway(String value);
         String GetRPCGateway();
         void SetRPCGateway(String value);
+        String[] GetRootNames();
     }
 }

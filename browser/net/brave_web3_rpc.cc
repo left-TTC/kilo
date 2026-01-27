@@ -204,21 +204,18 @@ namespace Solana_Rpc{
     void update_root_map(
         std::string content
     ){
-        // LOG(INFO) << "root name info: " << content;
+        
         if(content.empty()){
-            // use_root_prefs();
             return;
         }
 
         absl::optional<base::Value> parsed = base::JSONReader::Read(content, base::JSONParserOptions(0));
         if (!parsed.has_value()) {
             LOG(ERROR) << "Failed to parse JSON";
-            // use_root_prefs();
             return;
         }
         if (!parsed->is_dict()) {
             LOG(ERROR) << "Parsed JSON is not a dictionary";
-            // use_root_prefs();
             return;
         }
 
@@ -227,13 +224,11 @@ namespace Solana_Rpc{
         const base::Value::Dict* result_dict = roots_json.FindDict("result");
         if (!result_dict) {
             LOG(ERROR) << "No 'result' field or not a dictionary";
-            // use_root_prefs();
             return;
         }
         const base::Value::List* value_list = std::move(result_dict)->FindList("value");
         if (!value_list) {
             LOG(ERROR) << "No 'value' field or not a list";
-            // use_root_prefs();
             return;
         }
 
@@ -264,6 +259,7 @@ namespace Solana_Rpc{
 
         SolanaRootMap& rootMap = SolanaRootMap::instance();
         rootMap.set_all(roots);
+
     }
 
     
@@ -371,18 +367,15 @@ namespace Solana_Rpc{
 
         if(contents.empty()){
             LOG(INFO)<<"contents empty, use local root names"<< contents; 
-            // use_root_prefs();
         }
         
         absl::optional<base::Value> parsed = base::JSONReader::Read(contents, base::JSONParserOptions(0));
         if (!parsed.has_value()) {
             LOG(ERROR) << "Failed to parse JSON";
-            // use_root_prefs();
             return;
         }
         if (!parsed->is_dict()) {
             LOG(ERROR) << "Parsed JSON is not a dictionary";
-            // use_root_prefs();
             return;
         }
 
@@ -391,7 +384,6 @@ namespace Solana_Rpc{
         const base::Value::List* result_list = roots_json.FindList("result");
         if(!result_list){
             LOG(ERROR) << "No 'result' field or not a list";
-            // use_root_prefs();
             return;
         }
 
@@ -428,7 +420,6 @@ namespace Solana_Rpc{
         }
 
         if(pubkeys.size() == 0){
-            // use_root_prefs();
             return;
         }
         SolanaRootMap& rootMap = SolanaRootMap::instance();
