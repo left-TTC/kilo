@@ -14,7 +14,7 @@ public class KiloFeatures {
     private static boolean geted = false;
 
     public static boolean isBraveAIEnable() {
-        return true;
+        return false;
     }
 
     @Keep
@@ -53,7 +53,7 @@ public class KiloFeatures {
                         }
                     }
 
-                    return new Pair<>(target, true);
+                    return new Pair<>(target, found);
                 }
 
             }

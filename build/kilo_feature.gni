@@ -4,7 +4,7 @@ declare_args(){
 
     enable_browser_brave_VPN = true
 
-    enable_browser_brave_leo = false
+    enable_browser_brave_leo = true
     
     enable_browser_brave_talk = false
 
