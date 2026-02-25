@@ -49,8 +49,10 @@ namespace Solana_Rpc{
      *          nullopt      no data has been retrieved
      */
     DecodeResult decodeAndStripPubkeys(const std::string& base64_str, const DecodeType type) {
+
+        // NameRecordState
         std::vector<uint8_t> decoded_bytes;
-        if (base64_decode(base64_str.c_str(), decoded_bytes) != 0 || decoded_bytes.size() <= 96) {
+        if (base64_decode(base64_str.c_str(), decoded_bytes) != 0 || decoded_bytes.size() <= 137) {
             return {"", RecordType::Error};
         }
 
@@ -59,10 +61,10 @@ namespace Solana_Rpc{
         switch (type) {
             case DecodeType::Domain:
                 // jump over the vec head
-                cut_length = 108;
+                cut_length = 141;
                 break;
             case DecodeType::Cid:
-                cut_length = 104;
+                cut_length = 137;
                 break;
         }
 
@@ -70,17 +72,18 @@ namespace Solana_Rpc{
             return {"", RecordType::Error};
         }
 
-        if(cut_length == 104){
-            LOG(INFO) << "the 105" << decoded_bytes[104];
+        if(cut_length == 137){
+            LOG(INFO) << "the 105" << decoded_bytes[137];
             if(decoded_bytes[cut_length] == 0x00){
                 record_type = RecordType::IPFS;
                 LOG(INFO) << "This is a IPFS record";
-            }else{
+            }else if(decoded_bytes[cut_length] == 0x01) {
                 record_type = RecordType::IPNS;
                 LOG(INFO) << "This is a IPNS record";
             }
 
-            cut_length += 5;
+            // 1 + 32 + 4 
+            cut_length += 37;
         }
 
         return {std::string(decoded_bytes.begin() + cut_length, decoded_bytes.end()), record_type};

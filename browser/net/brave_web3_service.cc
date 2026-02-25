@@ -164,7 +164,7 @@ namespace Solana_web3{
     //-------------------------------------------
 
     Pubkey return_NAMESERVICE(){
-        return Pubkey("BjKdJYwPEUW51Fgjy6opBWCffpoGF5NFv7sZumBnbWZm");
+        return Pubkey("7864osdiV5r87pQnK8vzWEhstZ8S7JUo7bMMf1VhTHcS");
     }
 
     Pubkey return_RECORDSTATE(){
@@ -172,7 +172,7 @@ namespace Solana_web3{
     }
 
     Pubkey return_REGISTERSTATE(){
-        return Pubkey("DVwLzRmG4smZ5tE2U7GF1XRmUzwF7Zh1Pt152Jr6LBPz");
+        return Pubkey("GPPffbnuGHEcRGCGP96mj5Hr9NN2tcHHNkKnwymR3Lcg");
     }
 
 
@@ -277,7 +277,7 @@ namespace Solana_web3{
         
             //now we can calculate the ipfs account
             std::vector<std::vector<uint8_t>> domain_ipfs_seeds;
-            const std::string combined_ipfs = PREFIX + "IPFS";
+            const std::string combined_ipfs = PREFIX + "DNS";
             const std::vector<uint8_t> ipfs_account_bytes(combined_ipfs.begin(), combined_ipfs.end());
 
             std::array<uint8_t, Pubkey::LENGTH> hash_ipfs;
@@ -290,6 +290,8 @@ namespace Solana_web3{
             ipfs_account_seeds.push_back(std::vector<uint8_t>(domain_account_PDA.publickey.bytes.begin(), domain_account_PDA.publickey.bytes.end()));
 
             auto ipfs_account_PDA = try_find_program_address_cxx(ipfs_account_seeds, std::move(name_service));
+
+            LOG(INFO) << "PPPDA: " << ipfs_account_PDA.publickey.toBase58();
 
             return ipfs_account_PDA;
             
