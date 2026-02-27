@@ -17,23 +17,20 @@
     <div class="settings-box">
         <div class="start">IPFS Gateway:</div>
         <settings-input
-            pref="{{prefs.brave.wns.method_gateway}}">
+            pref="{{prefs.brave.wns.method_gateway}}"
+            mode="ipfs">
         </settings-input>
     </div>
+
     <div class="settings-box">
         <div class="start">WNS use rpc:</div>
         <settings-input
-            pref="{{prefs.brave.wns.rpc_gateway}}">
+            pref="{{prefs.brave.wns.rpc_gateway}}"
+            mode="rpc">
         </settings-input>
     </div>
-    <div class="settings-box">
-        <div class="start">Resolve Web3 Name Service</div>
-        <settings-dropdown-menu id="wnsResolveMethodType"
-                                pref="{{prefs.brave.wns.resolve_method}}"
-                                menu-options="[[resolveMethod_]]">
-        </settings-dropdown-menu>
-    </div>
 
+    
     <div class="settings-box">
         <div class="flex cr-padded-text">
             <div class="start">$i18n{resolveUnstoppableDomainsDesc}</div>

@@ -4,7 +4,9 @@
     "private": true,
     "scripts": {
         "getbrave": "tsx ./project_build/commands/scripts/getBrave.ts",
+        "brave": "tsx ./project_build/commands/scripts/brave.ts",
         "build": "tsx ./project_build/commands/scripts/build.ts",
+        "build:brave": "tsx ./project_build/commands/scripts/build_with_brave.ts",
         "applyPatch": "tsx ./project_build/commands/scripts/applyPatch.ts",
         "rebrand": "tsx ./project_build/commands/scripts/rebrand.ts",
         "exe": "tsx ./project_build/commands/scripts/packExe.ts"

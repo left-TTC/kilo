@@ -3,41 +3,95 @@
         display: flex;
         flex: 1;
         align-items: center;
+        position: relative;
+    }
+
+    .wrapper {
+        width: 100%;
+        position: relative;
+    }
+
+    .input-container {
+        position: relative;
+        display: flex;
+        align-items: center;
     }
 
     cr-input {
         width: 100%;
+        padding-right: 28px; /* 给按钮留空间 */
     }
 
-    .box-input {
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        width: 100%;
+    .dropdown-btn {
+        position: absolute;
+        right: 8px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        font-size: 12px;
+        opacity: 0.7;
+        z-index: 2;
+    }
+
+    .dropdown-btn:hover {
+        opacity: 1;
+    }
+
+    .dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--cr-card-background-color);
+        border: 1px solid var(--cr-separator-color);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+    }
+
+    .dropdown-item {
+        padding: 8px 12px;
+        cursor: pointer;
+    }
+
+    .dropdown-item:hover {
+        background: var(--cr-hover-background-color);
     }
 
     cr-policy-pref-indicator {
         margin-inline-end: var(--cr-controlled-by-spacing);
     }
-
-    .box {
-        width: 100%;
-    }
-
 </style>
 
 <template is="dom-if" if="[[pref.controlledBy]]" restamp>
     <cr-policy-pref-indicator pref="[[pref]]"></cr-policy-pref-indicator>
 </template>
 
-<div class="box">
-    <cr-input 
-        class="box-input"
-        id="input"
-        value="{{bindingValue_}}"
-        placeholder="{{bindingValue_}}"  
-        on-change="onInputChange_"
-        disabled="[[shouldDisable_(disabled, pref.*)]]"
-        type="url"> 
-    </cr-input>
+<div class="wrapper">
+    <div class="input-container">
+        <cr-input
+            id="input"
+            value="{{bindingValue_}}"
+            placeholder="[[placeholder]]"
+            on-change="onInputChange_"
+            disabled="[[shouldDisable_()]]"
+            type="url">
+        </cr-input>
+
+        <button class="dropdown-btn"
+                on-click="toggleDropdown_"
+                disabled="[[shouldDisable_()]]">
+            ▼
+        </button>
+    </div>
+
+    <template is="dom-if" if="[[dropdownOpen_]]">
+        <div class="dropdown">
+            <template is="dom-repeat" items="[[recommendedGateways_]]">
+                <div class="dropdown-item"
+                     on-click="onSelectRecommendation_">
+                    [[item]]
+                </div>
+            </template>
+        </div>
+    </template>
 </div>

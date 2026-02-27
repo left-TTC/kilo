@@ -1,6 +1,5 @@
 // Copyright 2024 The Brave Authors
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+// BSD-style license.
 
 import '//resources/cr_elements/cr_input/cr_input.js';
 import '//resources/cr_elements/cr_shared_vars.css.js';
@@ -19,7 +18,6 @@ export interface SettingsInputElement {
     };
 }
 
-// 继承 PrefControlMixin 和 CrPolicyPrefMixin 是关键
 const SettingsInputElementBase =
     CrPolicyPrefMixin(PrefControlMixin(PolymerElement));
 
@@ -29,67 +27,93 @@ export class SettingsInputElement extends SettingsInputElementBase {
     }
 
     static get template() {
-        // 假设 getTemplate() 引入了 settings_input.html 的模板
         return getTemplate();
     }
 
     static get properties() {
         return {
-            /** 组件显示的标签文字 (用于 cr-input 的 label) */
             label: String,
-
-            /** 占位符文字 */
             placeholder: String,
 
-            /** 是否禁用 */
             disabled: {
                 type: Boolean,
                 value: false,
                 reflectToAttribute: true,
             },
 
-            /**
-             * 内部绑定的值，用于和 cr-input 的 value 双向绑定。
-             * 这是接收 pref.value 并发送用户输入值的中间变量。
-             */
+            /** 区分 ipfs / rpc */
+            mode: {
+                type: String,
+                value: 'ipfs',   // 默认 ipfs
+            },
+
             bindingValue_: {
                 type: String,
                 value: '',
+            },
+
+            dropdownOpen_: {
+                type: Boolean,
+                value: false,
+            },
+
+            recommendedGateways_: {
+                type: Array,
+                value: () => [],
             },
         };
     }
 
     static get observers() {
         return [
-            // 监听 pref.value 的变化，以更新输入框
             'resetInput_(pref.value)',
+            'updateRecommended_(mode)',
         ];
     }
 
-    declare label: string;
-    declare placeholder: string;
-    declare disabled: boolean;
     declare bindingValue_: string;
+    declare dropdownOpen_: boolean;
+    declare recommendedGateways_: string[];
+    declare disabled: boolean;
+    declare mode: string;
 
-    /**
-     * 当后端的 Pref 值发生变化（或者初始化）时，更新输入框的显示内容。
-     * 这确保了输入框在加载时显示 Pref 的当前值。
-     */
+    override connectedCallback() {
+        super.connectedCallback();
+        document.addEventListener('click', this.onOutsideClick_);
+        this.updateRecommended_(this.mode);
+    }
+
+    override disconnectedCallback() {
+        super.disconnectedCallback();
+        document.removeEventListener('click', this.onOutsideClick_);
+    }
+
+    private updateRecommended_(mode: string) {
+        if (mode === 'rpc') {
+            this.recommendedGateways_ = [
+                'https://api.devnet.solana.com',
+                'https://devnet.helius-rpc.com/?api-key=87903272-8292-4dbd-b3c0-c9ddec0f3ef6',
+            ];
+        } else {
+            // ipfs
+            this.recommendedGateways_ = [
+                'https://ipfs.io',
+                'http://116.202.49.39'
+            ];
+        }
+    }
+
     private resetInput_() {
-        // 1. 获取后端 Pref 的值
-        const prefValue = this.pref && this.pref.value !== undefined ? 
-                            this.pref.value : 
-                            '';
-        
-        // 2. 只有当当前显示的值和 Pref 不一致时才更新
+        const prefValue =
+            this.pref && this.pref.value !== undefined
+                ? this.pref.value
+                : '';
+
         if (this.bindingValue_ !== prefValue) {
             this.bindingValue_ = prefValue as string;
         }
     }
 
-    /**
-     * 当用户完成输入（回车或失去焦点）时触发。
-     */
     private onInputChange_() {
         if (!this.pref) {
             return;
@@ -97,19 +121,38 @@ export class SettingsInputElement extends SettingsInputElementBase {
 
         if (this.bindingValue_ !== this.pref.value) {
             this.set('pref.value', this.bindingValue_);
-            
-            // 发送标准的 settings 事件，方便父组件监听（如果需要）
             this.dispatchEvent(new CustomEvent(
-                'settings-control-change', {bubbles: true, composed: true}));
+                'settings-control-change',
+                {bubbles: true, composed: true}));
         }
     }
 
-    /**
-     * 判断输入框是否应该被禁用
-     */
     private shouldDisable_(): boolean {
         return this.disabled || this.isPrefEnforced();
     }
+
+    private toggleDropdown_(e: Event) {
+        e.stopPropagation();
+        this.dropdownOpen_ = !this.dropdownOpen_;
+    }
+
+    private onSelectRecommendation_(e: any) {
+        const value = e.model.item;
+        this.bindingValue_ = value;
+        this.dropdownOpen_ = false;
+        this.onInputChange_();
+    }
+
+    private onOutsideClick_ = (e: Event) => {
+        if (!this.shadowRoot) {
+            return;
+        }
+
+        const path = e.composedPath();
+        if (!path.includes(this)) {
+            this.dropdownOpen_ = false;
+        }
+    };
 }
 
 declare global {

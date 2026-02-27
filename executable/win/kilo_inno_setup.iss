@@ -2,10 +2,10 @@
 ; Kilo.iss
 #define ReleaseDir "D:\brave\src\out\Release"
 #define OutPutKilo "D:\kiloInstaller"
-#define IcoPath "D:\Project\Kilo\kilo\ico\kilo-256.ico"
+#define IcoPath "D:\Project\Kilo-browser\kilo\ico\kilo-256.ico"
 
 [Setup]
-AppName=Kilo Installer
+AppName=Kilo Browser
 AppVersion=0.0.1
 AppPublisher=github/@left-TTC
 ; company
@@ -14,7 +14,7 @@ AppCopyright=© 2026 Unkonwn
 DefaultDirName={pf}\Kilo Browser
 DefaultGroupName=Kilo Browser
 OutputDir={#OutPutKilo}
-OutputBaseFilename=Kilo
+OutputBaseFilename=Kilo Installer
 Compression=lzma
 SolidCompression=yes
 
