@@ -37,7 +37,7 @@ export function App() {
     if (settingsArg === null) {
       return
     }
-    setSettingsView(settingsArg === 'BraveNews' ? 'news' : 'background')
+    setSettingsView('background')
     history.pushState(null, '', '/')
   }, [])
 
@@ -81,12 +81,7 @@ export function App() {
             <div className='widget-container'>
                 {
                     widgetLayoutReady && <>
-                    {/* {
-                        threeColumnWidth ?
-                        <WidgetStack name='left' tabs={['stats']} /> : */}
                         <WidgetStack name='left' tabs={['stats']} />
-                    {/* } */}
-                    {/* <WidgetStack name='right' tabs={['news']} /> */}
                     </>
                 }
             </div>

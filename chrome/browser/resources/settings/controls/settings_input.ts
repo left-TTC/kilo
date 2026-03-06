@@ -41,10 +41,9 @@ export class SettingsInputElement extends SettingsInputElementBase {
                 reflectToAttribute: true,
             },
 
-            /** 区分 ipfs / rpc */
             mode: {
                 type: String,
-                value: 'ipfs',   // 默认 ipfs
+                value: 'ipfs',   
             },
 
             bindingValue_: {

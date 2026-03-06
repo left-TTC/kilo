@@ -64,19 +64,6 @@ export function WidgetsPanel() {
             />
           </div>
       }
-      {/* {
-        talkFeatureEnabled &&
-          <div className='control-row'>
-            <label>{getString(S.NEW_TAB_SHOW_TALK_WIDGET_LABEL)}</label>
-            <Toggle
-              size='small'
-              checked={showTalkWidget}
-              onChange={({ checked }) => {
-                newTabActions.setShowTalkWidget(checked)
-              }}
-            />
-          </div>
-      } */}
     </div>
   )
 }
