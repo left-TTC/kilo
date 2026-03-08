@@ -75,6 +75,8 @@ export class SettingsInputElement extends SettingsInputElementBase {
     declare recommendedGateways_: string[];
     declare disabled: boolean;
     declare mode: string;
+    declare label: string;
+    declare placeholder: string;
 
     override connectedCallback() {
         super.connectedCallback();
