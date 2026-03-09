@@ -45,12 +45,7 @@ namespace Brave_web3_solana_task{
         }
     }
 
-    void update_root_domains(
-        scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory
-    ){
-        Solana_Rpc::get_all_root_domain(url_loader_factory);
-    }
-
+    
     void handle_web3_domain(
         const GURL& domain,
         base::OnceCallback<void(const GURL&, bool is_web3_domain)> restart_callback,
@@ -77,12 +72,16 @@ namespace Brave_web3_solana_task{
             LOG(INFO) << "will init the root map !!!";
 
             rootMap.reverse_load_state();
-            update_root_domains(url_loader_factory);
 
-            std::move(restart_callback).Run(domain, false);
+            // update dns and restart request
+            base::OnceClosure task = base::BindOnce(
+                &handle_web3_domain,
+                domain,
+                std::move(restart_callback),
+                browser_context
+            );
+            Solana_Rpc::get_all_root_domain(url_loader_factory, std::move(task));
         }else{
-
-            // LOG(INFO) << "Normal domain name processing !!!";
 
             auto* storage_partition = browser_context->GetDefaultStoragePartition();
             scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory =
@@ -98,7 +97,6 @@ namespace Brave_web3_solana_task{
             auto [index, found, pre_domain] = Solana_web3::fast_find(maybe_web3_domain, all_root_domains);
 
             if(!std::move(found)){
-                LOG(INFO) << "this is not a web3 domain";
                 std::move(restart_callback).Run(domain, false);
                 return;
             }
@@ -106,7 +104,6 @@ namespace Brave_web3_solana_task{
             DomainCidMap& domain_cid_map = DomainCidMap::instance();
             const absl::optional<Solana_Rpc::DecodeResult> schroding_cid = domain_cid_map.get_result(maybe_web3_domain);
             if(schroding_cid.has_value()){
-                LOG(INFO) << maybe_web3_domain << "' cid has beed recorded. directly open";
                 std::move(restart_callback).Run(return_url_from_cid(std::move(schroding_cid.value())), true);
                 return;
             }
@@ -114,7 +111,7 @@ namespace Brave_web3_solana_task{
             LOG(INFO) << "runtime ok here ";
 
             const std::vector<Solana_web3::Pubkey> roots = rootMap.get_all_pubkey();
-            const Solana_web3::Pubkey this_root = roots[std::move(index)];
+            const Solana_web3::Pubkey this_root = roots[index];
 
             LOG(INFO) << "root key: " << this_root.toBase58();
             LOG(INFO) << "pre domains: " << pre_domain;

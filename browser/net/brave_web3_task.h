@@ -51,8 +51,6 @@ namespace Brave_web3_solana_task{
 
     std::string get_local_ipfs_gateway();
 
-    void update_root_domains();
-
     void handle_web3_domain(
         const GURL& domain,
         base::OnceCallback<void(const GURL&, bool is_web3_domain)> restart_callback,

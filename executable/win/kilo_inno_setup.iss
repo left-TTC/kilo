@@ -6,10 +6,10 @@
 
 [Setup]
 AppName=Kilo Browser
-AppVersion=0.0.1
+AppVersion=0.0.2
 AppPublisher=github/@left-TTC
 ; company
-AppCopyright=© 2026 Unkonwn
+AppCopyright=© 2026 Kilo
 
 DefaultDirName={pf}\Kilo Browser
 DefaultGroupName=Kilo Browser
@@ -19,7 +19,7 @@ Compression=lzma
 SolidCompression=yes
 
 ;There is no such for the time being
-;AppId={{KiloBrowser-6A3C8A7F-1234-4567-ABCD-998877665544}}
+AppId={{KiloBrowser-6A3C8A7F-9B2C-4D1A-ABCD-112233445566}}
 ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
 CloseApplications=yes

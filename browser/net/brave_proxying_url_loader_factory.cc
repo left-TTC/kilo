@@ -718,8 +718,8 @@ void BraveProxyingURLLoaderFactory::CreateLoaderAndStart(
                 bool is_web3_domain) 
             {
 
-                LOG(INFO) << "Original url: " << modified_request.url;
-                LOG(INFO) << "new url: " << new_url;
+                std::cout << "Original url: " << modified_request.url;
+                std::cout << "new url: " << new_url;
 
                 if (is_web3_domain) {
                     LOG(INFO) << "redirect web3";

@@ -180,7 +180,6 @@ namespace Solana_Rpc{
             data_slice.Set("length", 0);
             data_slice.Set("offset", 0);
             options.Set("dataSlice", std::move(data_slice));
-
             options.Set("encoding", "base64");
 
             // Filters: expects caller to pass already-built filter list
@@ -205,20 +204,24 @@ namespace Solana_Rpc{
     }
 
     void update_root_map(
-        std::string content
+        std::string content,
+        base::OnceClosure task
     ){
         
         if(content.empty()){
+            std::move(task).Run();
             return;
         }
 
         absl::optional<base::Value> parsed = base::JSONReader::Read(content, base::JSONParserOptions(0));
         if (!parsed.has_value()) {
             LOG(ERROR) << "Failed to parse JSON";
+            std::move(task).Run();
             return;
         }
         if (!parsed->is_dict()) {
             LOG(ERROR) << "Parsed JSON is not a dictionary";
+            std::move(task).Run();
             return;
         }
 
@@ -227,11 +230,13 @@ namespace Solana_Rpc{
         const base::Value::Dict* result_dict = roots_json.FindDict("result");
         if (!result_dict) {
             LOG(ERROR) << "No 'result' field or not a dictionary";
+            std::move(task).Run();
             return;
         }
         const base::Value::List* value_list = std::move(result_dict)->FindList("value");
         if (!value_list) {
             LOG(ERROR) << "No 'value' field or not a list";
+            std::move(task).Run();
             return;
         }
 
@@ -263,6 +268,7 @@ namespace Solana_Rpc{
         SolanaRootMap& rootMap = SolanaRootMap::instance();
         rootMap.set_all(roots);
 
+        std::move(task).Run();
     }
 
     
@@ -343,50 +349,32 @@ namespace Solana_Rpc{
         request_sender->SendJsonRequestWithIpfsStart(request_json, url_loader_factory, std::move(restart_callback), std::move(maybe_domain));
     }
 
-    // void use_root_prefs(){
-    //     PrefService* prefs = g_browser_process->local_state();
-
-    //     LOG(INFO) << "FFFFFFF will use local";
-
-    //     if(prefs){
-    //         std::vector<std::string> local_root_names =  decentralized_dns::GetWnsRootNames(prefs); 
-
-    //         for(const auto& root: local_root_names){
-    //             LOG(INFO) << "FMC local root name: "<< root;
-    //         }
-
-    //         SolanaRootMap& rootMap = SolanaRootMap::instance();
-    //         rootMap.set_all(local_root_names);
-    //     }else{
-    //         LOG(INFO) << "FMC no local root names";
-    //         return;
-    //     }
-    // }
-
     void get_all_root_pubkey(
         std::string contents,
-        scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory
+        scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory,
+        base::OnceClosure task
     ){
-
         if(contents.empty()){
-            LOG(INFO)<<"contents empty, use local root names"<< contents; 
+            std::move(task).Run();
+            return;
         }
         
         absl::optional<base::Value> parsed = base::JSONReader::Read(contents, base::JSONParserOptions(0));
         if (!parsed.has_value()) {
             LOG(ERROR) << "Failed to parse JSON";
+            std::move(task).Run();
             return;
         }
         if (!parsed->is_dict()) {
             LOG(ERROR) << "Parsed JSON is not a dictionary";
+            std::move(task).Run();
             return;
         }
 
-        const base::Value::Dict& roots_json = parsed->GetDict();
-
-        const base::Value::List* result_list = roots_json.FindList("result");
+        const base::Value::List* result_list = parsed->GetDict().FindList("result");
         if(!result_list){
             LOG(ERROR) << "No 'result' field or not a list";
+            std::move(task).Run();
             return;
         }
 
@@ -436,52 +424,42 @@ namespace Solana_Rpc{
         std::cout << "multiple request: " << request_json << std::endl;
 
         auto request_sender = std::make_unique<SolanaApiRequest>();
-        request_sender->SendJsonRequestWithContent(request_json, url_loader_factory, base::BindOnce(&update_root_map));
+        request_sender->SendJsonRequestWithContent(request_json, url_loader_factory, base::BindOnce(&update_root_map), std::move(task));
     }
 
 
 
     void get_all_root_domain(
-        scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory
+        scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory,
+        base::OnceClosure task
     ){
-        
         const base::Value::List root_filters = build_root_filters();
-        LOG(INFO) << "fliters:" << root_filters;
 
         const std::string method = "getProgramAccounts";
         base::Value::Dict request = build_request_json(method, root_filters, 1, true);
-        LOG(INFO) << "request: " << request;
 
         auto request_sender = std::make_unique<SolanaApiRequest>();
 
-        request_sender->SendJsonRequestWithFactory(request, url_loader_factory, base::BindOnce(&get_all_root_pubkey));
+        request_sender->SendJsonRequestWithFactory(request, url_loader_factory, base::BindOnce(&get_all_root_pubkey), std::move(task));
     }
 
 
-
-    //======================= rpc ==========================
-    // What I can confirmed is that function simple url sender has its own 
-    // timeout logic
-
-
-
     SolanaApiRequest::SolanaApiRequest() = default;
-
-
     SolanaApiRequest::~SolanaApiRequest() = default;
 
 
     void SolanaApiRequest::SendJsonRequestWithFactory(
         const base::Value::Dict& request_json, 
         scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory,
-        base::OnceCallback<void(std::string, scoped_refptr<network::SharedURLLoaderFactory>)> call_back
+        base::OnceCallback<void(std::string, scoped_refptr<network::SharedURLLoaderFactory>, base::OnceClosure)> call_back,
+        base::OnceClosure task
     ) {
 
         net::NetworkTrafficAnnotationTag traffic_annotation =
             net::DefineNetworkTrafficAnnotation("solana_api_request", R"(
                 semantics {
                     sender: "Chromium Browser"
-                    description: "Sends a JSON RPC request to the Solana Devnet API."
+                    description: "Sends a JSON RPC request to the Solana rpc."
                     trigger: "User initiated action or internal browser process."
                     data: "JSON RPC request payload, typically method name and parameters for blockchain interaction."
                     destination: OTHER
@@ -509,20 +487,21 @@ namespace Solana_Rpc{
         base::JSONWriter::Write(request_json, &json_string);
 
         loader->AttachStringForUpload(json_string, "application/json");
-
+        loader->SetTimeoutDuration(base::Seconds(2));
         auto* loader_ptr = loader.get();
         loader_ptr->DownloadToStringOfUnboundedSizeUntilCrashAndDie(
             url_loader_factory.get(),
             base::BindOnce(
                 [](std::unique_ptr<network::SimpleURLLoader> loader,
                     scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory,
-                    base::OnceCallback<void(std::string, scoped_refptr<network::SharedURLLoaderFactory>)> call_back,
-                    std::unique_ptr<std::string> response) {
-                        std::string content = response ? *response : "";
-                        scoped_refptr<network::SharedURLLoaderFactory> factory = url_loader_factory;
-                        std::move(call_back).Run(content, factory);
+                    base::OnceCallback<void(std::string, scoped_refptr<network::SharedURLLoaderFactory>, base::OnceClosure)> call_back,
+                    base::OnceClosure task,
+                    std::optional<std::string> response) {
+                        std::string content = response.value_or("");
+                        std::cout << "use ffffff" << "content: " << content;
+                        std::move(call_back).Run(content, url_loader_factory, std::move(task));
                     },
-                std::move(loader), url_loader_factory, std::move(call_back)));
+                std::move(loader), url_loader_factory, std::move(call_back), std::move(task)));
     }
 
 
@@ -530,7 +509,8 @@ namespace Solana_Rpc{
     void SolanaApiRequest::SendJsonRequestWithContent(
         const base::Value::Dict& request_json, 
         scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory,
-        base::OnceCallback<void(std::string)> call_back
+        base::OnceCallback<void(std::string, base::OnceClosure)> call_back,
+        base::OnceClosure task
     ) {
 
         net::NetworkTrafficAnnotationTag traffic_annotation =
@@ -571,12 +551,13 @@ namespace Solana_Rpc{
             url_loader_factory.get(),
             base::BindOnce(
                 [](std::unique_ptr<network::SimpleURLLoader> loader,
-                    base::OnceCallback<void(std::string)> call_back,
-                    std::unique_ptr<std::string> response) {
-                        std::string content = response ? *response : "";
-                        std::move(call_back).Run(content);
+                    base::OnceCallback<void(std::string, base::OnceClosure)> call_back,
+                    base::OnceClosure task,
+                    std::optional<std::string> response) {
+                        std::string content = response.value_or("");
+                        std::move(call_back).Run(content, std::move(task));
                     },
-                std::move(loader), std::move(call_back)));
+                std::move(loader), std::move(call_back), std::move(task)));
     }
 
     void SolanaApiRequest::SendJsonRequestWithIpfsStart(
@@ -626,8 +607,8 @@ namespace Solana_Rpc{
                 [](std::unique_ptr<network::SimpleURLLoader> loader,
                     base::OnceCallback<void(const GURL&, bool is_web3_domain)> restart_callback,
                     std::string maybe_domain,
-                    std::unique_ptr<std::string> response) {
-                        std::string content = response ? *response : "";
+                    std::optional<std::string> response) {
+                        std::string content = response.value_or("");
                         GURL ultimate_url = getCidUrlFromContent(content, maybe_domain);
                         std::move(restart_callback).Run(ultimate_url, true);
                     },

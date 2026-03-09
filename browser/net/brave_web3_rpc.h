@@ -52,13 +52,15 @@ namespace Solana_Rpc{
         void SendJsonRequestWithFactory(
             const base::Value::Dict& request_json, 
             scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory,
-            base::OnceCallback<void(std::string, scoped_refptr<network::SharedURLLoaderFactory>)> call_back
+            base::OnceCallback<void(std::string, scoped_refptr<network::SharedURLLoaderFactory>, base::OnceClosure)> call_back,
+            base::OnceClosure task
         );
 
         void SendJsonRequestWithContent(
             const base::Value::Dict& request_json, 
             scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory,
-            base::OnceCallback<void(std::string)> call_back
+            base::OnceCallback<void(std::string, base::OnceClosure)> call_back,
+            base::OnceClosure task
         );
 
         void SendJsonRequestWithIpfsStart(
@@ -156,7 +158,8 @@ namespace Solana_Rpc{
     );
 
     void update_root_map(
-        std::string content
+        std::string content,
+        base::OnceClosure task
     );
 
     void get_account_info_and_restart(
@@ -170,11 +173,13 @@ namespace Solana_Rpc{
 
     void get_all_root_pubkey(
         std::string contents,
-        scoped_refptr<network::SharedURLLoaderFactory> factory
+        scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory,
+        base::OnceClosure task
     );
 
     void get_all_root_domain(
-        scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory
+        scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory,
+        base::OnceClosure task
     );
 }
 
