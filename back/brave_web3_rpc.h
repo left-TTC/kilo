@@ -39,7 +39,6 @@
 #include "base/synchronization/lock.h"
 
 #include "brave/browser/net/brave_web3_service.h"
-#include "brave_web3_gate.h"
 
 namespace Solana_Rpc{
 
@@ -54,8 +53,7 @@ namespace Solana_Rpc{
             const base::Value::Dict& request_json, 
             scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory,
             base::OnceCallback<void(std::string, scoped_refptr<network::SharedURLLoaderFactory>, base::OnceClosure)> call_back,
-            base::OnceClosure task,
-            base::OnceCallback<void(base::OnceClosure)> restart_check
+            base::OnceClosure task
         );
 
         void SendJsonRequestWithContent(

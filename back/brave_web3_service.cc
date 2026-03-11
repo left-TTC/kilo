@@ -8,6 +8,21 @@
 
 namespace Solana_web3{
 
+    GURL RpcUrl() {
+        PrefService* prefs = g_browser_process->local_state();
+
+        if(prefs){
+            std::string local_rpc =  decentralized_dns::GetRpcGateWay(prefs); 
+
+            LOG(INFO) << "FMC find rpc link from local" << local_rpc;
+
+            return GURL(local_rpc);
+        }else{
+            LOG(INFO) << "FMC no local root names";
+            return GURL("https://api.devnet.solana.com");
+        }
+    }
+
 
     std::string PDAMarker() {
         return "ProgramDerivedAddress";
@@ -287,6 +302,8 @@ namespace Solana_web3{
     // it will turn to a search result
     // such as origin: "https://search.brave.com/search?q=x.web3&source=desktop"
     std::tuple<std::string, bool> extract_target_domain(const GURL& original_url) {
+        
+        LOG(INFO) << "extract origin: " << original_url;
 
         if (original_url.spec().find("search?q") != std::string::npos ) {
             

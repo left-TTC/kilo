@@ -274,6 +274,7 @@ namespace Solana_Rpc{
     
 
     GURL getCidUrlFromContent(std::string content, std::string maybe_domain){
+        LOG(INFO) << "ipfs query result: " << content;
 
         absl::optional<base::Value> parsed = base::JSONReader::Read(content, base::JSONParserOptions(0));
         if (!parsed || !parsed->is_dict()) {
@@ -304,18 +305,7 @@ namespace Solana_Rpc{
         if(encoded_data){
             const DecodeResult decode_result = decodeAndStripPubkeys(*encoded_data, DecodeType::Cid);
 
-            std::string ultimate_url_str;
-            Kilo_Gate::IPFSGate& ipfs_map = Kilo_Gate::IPFSGate::instance();
-            size_t index = ipfs_map.active_index();
-            if(ipfs_map.if_able() && index != 10086){
-                std::cout << "Use useful ipfs gate" << std::endl;
-                ultimate_url_str = ipfs_map.get()[index];
-            }else{
-                ultimate_url_str = "https://127.0.0.1:8080";
-            }
-
-            std::cout << "TTTTT: " << ultimate_url_str << "index: " << index << std::endl;
-
+            std::string ultimate_url_str = Brave_web3_solana_task::get_local_ipfs_gateway();
             switch(decode_result.record_type){
                 case RecordType::IPFS:
                     ultimate_url_str += "/ipfs/";
@@ -431,6 +421,8 @@ namespace Solana_Rpc{
         base::Value::List params = build_common_request_args(pubkey_list, true);
         base::Value::Dict request_json = build_request_json(method, params);
 
+        std::cout << "multiple request: " << request_json << std::endl;
+
         auto request_sender = std::make_unique<SolanaApiRequest>();
         request_sender->SendJsonRequestWithContent(request_json, url_loader_factory, base::BindOnce(&update_root_map), std::move(task));
     }
@@ -446,59 +438,9 @@ namespace Solana_Rpc{
         const std::string method = "getProgramAccounts";
         base::Value::Dict request = build_request_json(method, root_filters, 1, true);
 
-        std::vector<std::string> agent = Kilo_Gate::RpcAgent::instance().get();
-
         auto request_sender = std::make_unique<SolanaApiRequest>();
-        if (agent.size() == 0) {
-            std::cout << "Step-0: no agent, ready to get" << std::endl;
-            // means need get rpc agent domain from ipfs
-            Kilo_Gate::IPFSGate& ipfsMap = Kilo_Gate::IPFSGate::instance();
 
-            std::vector<std::string> ipfs_gates = ipfsMap.get();
-            if(ipfs_gates.size() == 0){
-                // get, verify and restart
-
-                std::cout << "Step1: check IPFS" << std::endl;
-                base::OnceClosure restart_get_all_root_domain = base::BindOnce(
-                    &get_all_root_domain,
-                    url_loader_factory,
-                    std::move(task)
-                );
-                Kilo_Gate::load_Ipfs(
-                    std::move(restart_get_all_root_domain),
-                    url_loader_factory
-                );
-            }else{
-                std::cout << "Step2: got IPFS and need test ipfs" << std::endl;
-                // index += 1 and restart;
-                if(ipfsMap.next_index()){
-                    base::OnceClosure restart_get_all_root_domain = base::BindOnce(
-                        &get_all_root_domain,
-                        url_loader_factory,
-                        std::move(task)
-                    );
-                    Kilo_Gate::load_Ipfs(
-                        std::move(restart_get_all_root_domain),
-                        url_loader_factory
-                    );
-                }else{
-                    // no usable ipfs gate
-                    std::move(task).Run();
-                    return;
-                }
-            }            
-        } else {
-
-            std::cout << "Step-3: got rpc agents" << std::endl;
-
-            base::OnceCallback<void(base::OnceClosure)> restart_check = base::BindOnce(
-                &get_all_root_domain,
-                url_loader_factory
-            );
-            
-            request_sender->SendJsonRequestWithFactory(request, url_loader_factory, base::BindOnce(&get_all_root_pubkey), std::move(task), std::move(restart_check));
-        }
-
+        request_sender->SendJsonRequestWithFactory(request, url_loader_factory, base::BindOnce(&get_all_root_pubkey), std::move(task));
     }
 
 
@@ -509,12 +451,8 @@ namespace Solana_Rpc{
     void SolanaApiRequest::SendJsonRequestWithFactory(
         const base::Value::Dict& request_json, 
         scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory,
-        // the request to get Pubkey
         base::OnceCallback<void(std::string, scoped_refptr<network::SharedURLLoaderFactory>, base::OnceClosure)> call_back,
-        // the true request task
-        base::OnceClosure task,
-        // the task to restart the get_all_root_domain function
-        base::OnceCallback<void(base::OnceClosure)> restart_get_all_root_domain
+        base::OnceClosure task
     ) {
 
         net::NetworkTrafficAnnotationTag traffic_annotation =
@@ -535,31 +473,9 @@ namespace Solana_Rpc{
             )");
 
         auto resource_request = std::make_unique<network::ResourceRequest>();
+        const GURL Solana_api = Solana_web3::RpcUrl();
 
-        Kilo_Gate::RpcAgent& rpc_gate_map = Kilo_Gate::RpcAgent::instance();
-        std::vector<std::string> rpcs = rpc_gate_map.get();
-        size_t active_index = rpc_gate_map.active_index();
-
-        if (rpc_gate_map.read_fail() == active_index){
-            if(rpc_gate_map.next_index()){
-                std::cout << active_index << " failed, will add 1" << std::endl;
-                active_index += 1;
-            }else{
-                std::cout << " no rpc can be used" << std::endl;
-                std::move(task).Run();
-                return;
-            }
-        }
-        rpc_gate_map.add_fail();
-        if(active_index >= 10086 || active_index >= rpcs.size()){
-            std::cout << "No usable rpc" << std::endl;
-            std::move(task).Run();
-            return;
-        }
-
-        GURL this_rpc = GURL(rpcs[active_index]);
-
-        resource_request->url = this_rpc;
+        resource_request->url = Solana_api;
         resource_request->method = "POST";
         resource_request->credentials_mode = network::mojom::CredentialsMode::kOmit;
 
@@ -571,12 +487,8 @@ namespace Solana_Rpc{
         base::JSONWriter::Write(request_json, &json_string);
 
         loader->AttachStringForUpload(json_string, "application/json");
-        loader->SetTimeoutDuration(base::Seconds(4));
+        loader->SetTimeoutDuration(base::Seconds(2));
         auto* loader_ptr = loader.get();
-
-        std::cout << "Step-4: test rpc: " << this_rpc << std::endl;
-        std::cout << "index: " << active_index 
-          << " size: " << rpcs.size() << std::endl;
         loader_ptr->DownloadToStringOfUnboundedSizeUntilCrashAndDie(
             url_loader_factory.get(),
             base::BindOnce(
@@ -584,22 +496,12 @@ namespace Solana_Rpc{
                     scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory,
                     base::OnceCallback<void(std::string, scoped_refptr<network::SharedURLLoaderFactory>, base::OnceClosure)> call_back,
                     base::OnceClosure task,
-                    base::OnceCallback<void(base::OnceClosure)> restart_get_all_root_domain,
-                    size_t real_use,
                     std::optional<std::string> response) {
                         std::string content = response.value_or("");
-                        if(content == ""){
-                            // means this rpc is useless
-                            std::cout << "No content" << std::endl;
-                            std::move(restart_get_all_root_domain).Run(std::move(task));
-                        }else {
-                            std::cout << "content: " << content << "run this rpc" << std::endl;
-                            Kilo_Gate::RpcAgent& rpc_gate_map = Kilo_Gate::RpcAgent::instance();
-                            rpc_gate_map.set_able(real_use);
-                            std::move(call_back).Run(content, url_loader_factory, std::move(task));
-                        }
+                        std::cout << "use ffffff" << "content: " << content;
+                        std::move(call_back).Run(content, url_loader_factory, std::move(task));
                     },
-                std::move(loader), url_loader_factory, std::move(call_back), std::move(task), std::move(restart_get_all_root_domain), active_index));
+                std::move(loader), url_loader_factory, std::move(call_back), std::move(task)));
     }
 
 
@@ -629,17 +531,8 @@ namespace Solana_Rpc{
             )");
 
         auto resource_request = std::make_unique<network::ResourceRequest>();
+        const GURL Solana_api = Solana_web3::RpcUrl();
 
-        Kilo_Gate::RpcAgent& rpc_gate_map = Kilo_Gate::RpcAgent::instance();
-        size_t use_index = rpc_gate_map.true_use();
-        if(!rpc_gate_map.if_able() || use_index == 10086){
-            std::move(task).Run();
-            return;
-        }
-        std::cout << "LAST use index: " << use_index << std::endl;
-        const GURL Solana_api = GURL(rpc_gate_map.get()[use_index]);
-        std::cout << "SendJsonRequestWithContent use rpc: " << Solana_api << std::endl;
-        
         resource_request->url = Solana_api;
         resource_request->method = "POST";
         resource_request->credentials_mode = network::mojom::CredentialsMode::kOmit;
@@ -682,7 +575,7 @@ namespace Solana_Rpc{
                 trigger: "User initiated action or internal browser process."
                 data: "JSON RPC request payload, typically method name and parameters for blockchain interaction."
                 destination: OTHER
-                destination_other: "Solana RPC API"
+                destination_other: "Solana Devnet API"
                 }
                 policy {
                 cookies_allowed: NO
@@ -692,15 +585,7 @@ namespace Solana_Rpc{
             )");
 
         auto resource_request = std::make_unique<network::ResourceRequest>();
-        Kilo_Gate::RpcAgent& rpc_gate_map = Kilo_Gate::RpcAgent::instance();
-        size_t use_index = rpc_gate_map.true_use();
-        if(!rpc_gate_map.if_able() || use_index == 10086){
-            std::move(restart_callback).Run(GURL(maybe_domain), false);
-            return;
-        }
-        std::cout << "LAST use index: " << use_index << std::endl;
-        const GURL Solana_api = GURL(rpc_gate_map.get()[use_index]);
-        std::cout << "SendJsonRequestWithIpfsStart use rpc: " << Solana_api << std::endl;
+        const GURL Solana_api = Solana_web3::RpcUrl();
 
         resource_request->url = Solana_api;
         resource_request->method = "POST";

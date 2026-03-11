@@ -24,6 +24,7 @@
 
 
 namespace Solana_web3{
+    GURL RpcUrl();
 
     const size_t MAX_SEEDS = 16;
 

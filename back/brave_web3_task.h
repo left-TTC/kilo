@@ -11,7 +11,6 @@
 #include "chrome/browser/browser_process.h"
 
 #include "brave_web3_rpc.h"
-#include "brave_web3_gate.h"
 
 namespace Brave_web3_solana_task{
 
@@ -48,6 +47,10 @@ namespace Brave_web3_solana_task{
         std::map<std::string, Solana_Rpc::DecodeResult> domain_cid_map_;
     };
 
+    bool if_use_WNS();
+
+    std::string get_local_ipfs_gateway();
+
     void handle_web3_domain(
         const GURL& domain,
         base::OnceCallback<void(const GURL&, bool is_web3_domain)> restart_callback,
@@ -60,8 +63,12 @@ namespace Brave_web3_solana_task{
     );
 
     GURL return_url_from_cid(const Solana_Rpc::DecodeResult& result);
+
+    std::string ExtractPathFromSearchURL(const GURL& url);
     
-    void omnibox_match_judge(GURL& frist_destination_url);
+    void omnibox_match_judge(
+        GURL& frist_destination_url
+    );
 }
 
 #endif

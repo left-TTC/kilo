@@ -13,38 +13,69 @@ namespace Brave_web3_solana_task{
         static base::NoDestructor<DomainCidMap> instance;
         return *instance;
     }
+
+    bool if_use_WNS(){
+        PrefService* prefs = g_browser_process->local_state();
+
+        if (prefs) {
+            const bool ipfs_proxy =
+                decentralized_dns::IsWnsResolveMethodEnabled(prefs);
+            LOG(INFO) << "FMC get ipfs over";
+
+            std::string gateway = decentralized_dns::GetIpfsGateWay(prefs);
+            LOG(INFO) << "FMC get ipfs gateway: "<< gateway;
+            
+            return ipfs_proxy;
+
+        } else {
+            LOG(INFO) << "FMC no service";
+            return false;
+        }
+    }
+
+    std::string get_local_ipfs_gateway(){
+        PrefService* prefs = g_browser_process->local_state();
+
+        if(prefs){
+            LOG(INFO) << "FMC local ipfs gateway: "<< decentralized_dns::GetIpfsGateWay(prefs);
+            return decentralized_dns::GetIpfsGateWay(prefs); 
+        }else{
+            LOG(INFO) << "FMC no local ipfs gateway";
+            return "https://ipfs.io/";
+        }
+    }
+
     
     void handle_web3_domain(
         const GURL& domain,
         base::OnceCallback<void(const GURL&, bool is_web3_domain)> restart_callback,
         content::BrowserContext* browser_context
     ){
+
+        LOG(INFO) << "domain: " << domain;
+
         // get the global root domains map
         Solana_Rpc::SolanaRootMap& rootMap = Solana_Rpc::SolanaRootMap::instance();
         std::vector<std::string> all_root_domains =  rootMap.get_all();
 
-        // std::cout << "domain: " << domain << std::endl;
+        for(const auto& root: all_root_domains){
+            LOG(INFO) << "root:" << root;
+        }
 
         // check the map state
-        if(!rootMap.has_loaded){
+        if(all_root_domains.size() == 0 || !rootMap.has_loaded){
             auto* storage_partition = browser_context->GetDefaultStoragePartition();
             scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory =
                 storage_partition->GetURLLoaderFactoryForBrowserProcess();
 
             // init
-            std::cout << "will init the root map !!!"  << std::endl;
+            LOG(INFO) << "will init the root map !!!";
+
+            rootMap.reverse_load_state();
 
             // update dns and restart request
             base::OnceClosure task = base::BindOnce(
-                [](Solana_Rpc::SolanaRootMap* root_map,
-                const GURL& domain,
-                base::OnceCallback<void(const GURL&, bool)> restart_callback,
-                content::BrowserContext* browser_context) {
-
-                    root_map->reverse_load_state();
-                    handle_web3_domain(domain, std::move(restart_callback), browser_context);
-                },
-                &rootMap,
+                &handle_web3_domain,
                 domain,
                 std::move(restart_callback),
                 browser_context
@@ -56,17 +87,16 @@ namespace Brave_web3_solana_task{
             scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory =
                 storage_partition->GetURLLoaderFactoryForBrowserProcess();
 
-            // get the domain content
-            // http://dns.kilo/#/index?r=aaaa
-            // maybe_web3_domain ==> dns.kilo
+             // get the domain content
             const auto [maybe_web3_domain, _] = Solana_web3::extract_target_domain(domain);
+            LOG(INFO) << maybe_web3_domain << " is the contained domain";
 
             // index => the indexof the rootDomain
             // found => if the web3 domain
             // pre_domain => the front part of the domain name
             auto [index, found, pre_domain] = Solana_web3::fast_find(maybe_web3_domain, all_root_domains);
 
-            if(!found){
+            if(!std::move(found)){
                 std::move(restart_callback).Run(domain, false);
                 return;
             }
@@ -74,15 +104,17 @@ namespace Brave_web3_solana_task{
             DomainCidMap& domain_cid_map = DomainCidMap::instance();
             const absl::optional<Solana_Rpc::DecodeResult> schroding_cid = domain_cid_map.get_result(maybe_web3_domain);
             if(schroding_cid.has_value()){
-                std::move(restart_callback).Run(return_url_from_cid(schroding_cid.value()), true);
+                std::move(restart_callback).Run(return_url_from_cid(std::move(schroding_cid.value())), true);
                 return;
             }
+
+            LOG(INFO) << "runtime ok here ";
 
             const std::vector<Solana_web3::Pubkey> roots = rootMap.get_all_pubkey();
             const Solana_web3::Pubkey this_root = roots[index];
 
-            // LOG(INFO) << "root key: " << this_root.toBase58();
-            // LOG(INFO) << "pre domains: " << pre_domain;
+            LOG(INFO) << "root key: " << this_root.toBase58();
+            LOG(INFO) << "pre domains: " << pre_domain;
 
             Solana_web3::PDA domain_ipfs_key = Solana_web3::Solana_web3_interface::get_account_from_root(std::move(pre_domain), std::move(this_root));
 
@@ -119,30 +151,45 @@ namespace Brave_web3_solana_task{
             LOG(INFO) << "other frame";
         }
 
-        std::string path = std::string(modified_request->url.PathForRequest());
-        if (modified_request->url.has_ref()) {
-            path += "#";
-            path += modified_request->url.ref();
+
+        // this parameter means wheather the domain is a strange domain
+        // strange => usr directly input the xxx.web3 on navibar
+        // and the browser wasn'e ever seen the domain
+        // it will trigger a search by search engine
+        bool if_stranger_web3 = false;
+
+        if (modified_request->url.spec().find("search?q") != std::string::npos ) {
+            // means strange domain and a KmainFrame
+
+            if (request_type != net::IsolationInfo::RequestType::kMainFrame){
+                return;
+            }
+            if_stranger_web3 = true;
         }
-        std::cout << "the origin domain's path: " << path << std::endl;
+
+        std::string path = std::string(modified_request->url.path());
         // get the real IPFS url
         std::string full_ipfs_url = ipfs_url.spec();
         if (!path.empty()) {
+
             if (full_ipfs_url.back() != '/' && path.front() != '/') {
                 full_ipfs_url += '/';
             }
             if (full_ipfs_url.back() == '/' && path.front() == '/'){
                 full_ipfs_url.pop_back(); 
             }
+            
+            if (if_stranger_web3){
+                path = ExtractPathFromSearchURL(modified_request->url);
+            }
 
             LOG(INFO) << "this path: " << path;
             full_ipfs_url += path;
         }
 
-        std::cout << "the last domain's url: " << full_ipfs_url << std::endl;
         modified_request->url = GURL(full_ipfs_url);
 
-        // when the type is mainframe => the origin must be the xxx.kilo
+        // when the type is mainframe => the origin must be the xxx.web3
         if (request_type == net::IsolationInfo::RequestType::kMainFrame) {
             if (!modified_request->trusted_params) {
                 // if npos => create a trusted_params
@@ -168,18 +215,29 @@ namespace Brave_web3_solana_task{
         
     }
 
+    std::string ExtractPathFromSearchURL(const GURL& url) {
+        std::string query = std::string(url.query());
+        size_t q_pos = query.find("q=");
+        if (q_pos == std::string::npos)
+            return "";
+
+        std::string q_value = query.substr(q_pos + 2);
+
+        size_t amp_pos = q_value.find('&');
+        if (amp_pos != std::string::npos)
+            q_value = q_value.substr(0, amp_pos);
+
+        size_t slash_pos = q_value.find('/');
+        if (slash_pos == std::string::npos)
+            return "";
+
+        return q_value.substr(slash_pos);
+    }
+
+
     GURL return_url_from_cid(const Solana_Rpc::DecodeResult& result){
 
-        std::string new_url;
-
-        Kilo_Gate::IPFSGate& ipfs_map = Kilo_Gate::IPFSGate::instance();
-        size_t index = ipfs_map.active_index();
-        if(ipfs_map.if_able() && index != 10086){
-            new_url = ipfs_map.get()[index];
-        }else{
-            new_url = "https://127.0.0.1:8080";
-        }
-        
+        std::string new_url = get_local_ipfs_gateway();
         switch(result.record_type){
             case Solana_Rpc::RecordType::IPFS:
                 new_url += "/ipfs/";
