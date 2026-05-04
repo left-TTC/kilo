@@ -257,6 +257,11 @@ namespace Solana_Rpc{
             }
         }
 
+        // for debug
+        for(const std::string &root: roots){
+            std::cout << "root: " << root << std::endl;
+        }
+
         PrefService* prefs = g_browser_process->local_state();
         std::vector<std::string> local_root_names =  decentralized_dns::GetWnsRootNames(prefs); 
 

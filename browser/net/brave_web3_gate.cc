@@ -5,7 +5,7 @@
 namespace Kilo_Gate {
 
     GURL get_rpc_record_ipfs(std::string ipfs){
-        return GURL(ipfs + "/ipfs/QmcdV8N2MwHWx9vjocePNQZxjZwRkGoiy3w9819sxGhufH");
+        return GURL(ipfs + "/ipns/k51qzi5uqu5djyav42cp4p1cwomu0j8njt1tlccy4ozdpusiv5l06widhyklgg");
     }
 
     std::vector<std::string> GetRpcFromContent(const std::string& input) {
@@ -22,30 +22,67 @@ namespace Kilo_Gate {
     }
 
     void AddUsrRpc(std::vector<std::string>& got_rpcs) {
+        auto normalize = [](std::string s) {
+            auto trim = [](std::string& str) {
+                str.erase(str.begin(), std::find_if(str.begin(), str.end(), [](unsigned char ch) {
+                    return !std::isspace(ch);
+                }));
+                str.erase(std::find_if(str.rbegin(), str.rend(), [](unsigned char ch) {
+                    return !std::isspace(ch);
+                }).base(), str.end());
+            };
+
+            trim(s);
+
+            while (!s.empty() && s.back() == '/') {
+                s.pop_back();
+            }
+
+            return s;
+        };
+
         PrefService* prefs = g_browser_process->local_state();
         if (!prefs)
             return;
 
         std::string pref_rpc = decentralized_dns::GetRpcGateWay(prefs);
+        pref_rpc = normalize(pref_rpc);
+
         if (pref_rpc.empty())
             return;
 
-        while (!pref_rpc.empty() && pref_rpc.back() == '/') {
-            pref_rpc.pop_back();
+        std::unordered_set<std::string> seen;
+        std::vector<std::string> deduped;
+
+        for (const auto& rpc : got_rpcs) {
+            std::string norm = normalize(rpc);
+
+            if (norm.empty())
+                continue;
+
+            if (seen.insert(norm).second) {
+                deduped.push_back(norm);
+            }
         }
 
-        auto it = std::find(got_rpcs.begin(), got_rpcs.end(), pref_rpc);
+        got_rpcs = std::move(deduped);
 
-        if (it != got_rpcs.end()) {
-            got_rpcs.erase(it);
-        }
+        got_rpcs.erase(
+            std::remove(got_rpcs.begin(), got_rpcs.end(), pref_rpc),
+            got_rpcs.end()
+        );
 
         got_rpcs.insert(got_rpcs.begin(), pref_rpc);
-        got_rpcs.push_back("RPC_GUARD");
+
+        const std::string kGuard = "RPC_GUARD";
+
+        if (std::find(got_rpcs.begin(), got_rpcs.end(), kGuard) == got_rpcs.end()) {
+            got_rpcs.push_back(kGuard);
+        }
 
         std::cout << "After AddUsrRpc:" << std::endl;
         for (const auto& rpc : got_rpcs) {
-            std::cout << rpc << std::endl;
+            std::cout << "[" << rpc << "]" << std::endl;
         }
     }
 
@@ -146,31 +183,61 @@ namespace Kilo_Gate {
     IPFSGate::IPFSGate() = default;
     IPFSGate::~IPFSGate() = default;
 
-    void IPFSGate::new_gates(){
+    void IPFSGate::new_gates() {
         base::AutoLock lock(lock_);
+
+        auto normalize = [](std::string s) {
+            // trim
+            auto trim = [](std::string& str) {
+                str.erase(str.begin(), std::find_if(str.begin(), str.end(), [](unsigned char ch) {
+                    return !std::isspace(ch);
+                }));
+                str.erase(std::find_if(str.rbegin(), str.rend(), [](unsigned char ch) {
+                    return !std::isspace(ch);
+                }).base(), str.end());
+            };
+
+            trim(s);
+
+            while (!s.empty() && s.back() == '/') {
+                s.pop_back();
+            }
+
+            return s;
+        };
 
         std::vector<std::string> IPFS_gates;
 
-        IPFS_gates.push_back("https://121.121.11");
-        IPFS_gates.push_back("https://ipfs.io");
-        IPFS_gates.push_back("http://127.0.0.1:8080");
+        IPFS_gates.push_back(normalize("https://ipfs.io"));
+        IPFS_gates.push_back(normalize("http://127.0.0.1:8888"));
 
         PrefService* prefs = g_browser_process->local_state();
         if (prefs) {
-            std::string pref_gate = decentralized_dns::GetIpfsGateWay(prefs);
+            std::string pref_gate = normalize(decentralized_dns::GetIpfsGateWay(prefs));
 
             if (!pref_gate.empty()) {
-                if (pref_gate.ends_with("/")) {
-                    pref_gate.pop_back();
-                }
-                auto it = std::find(IPFS_gates.begin(), IPFS_gates.end(), pref_gate);
+                auto it = std::find_if(IPFS_gates.begin(), IPFS_gates.end(),
+                    [&](const std::string& gate) {
+                        return normalize(gate) == pref_gate;
+                    });
+
                 if (it == IPFS_gates.end()) {
                     IPFS_gates.push_back(pref_gate);
                 }
             }
         }
 
-        ipfs_list_ = IPFS_gates;
+        std::unordered_set<std::string> seen;
+        std::vector<std::string> deduped;
+
+        for (auto& gate : IPFS_gates) {
+            std::string norm = normalize(gate);
+            if (seen.insert(norm).second) {
+                deduped.push_back(norm);
+            }
+        }
+
+        ipfs_list_ = std::move(deduped);
         active_index_ = 0;
         now_able = false;
     }
