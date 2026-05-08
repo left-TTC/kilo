@@ -83,6 +83,7 @@ namespace Solana_Rpc{
         static SolanaRootMap& instance();
 
         bool has_loaded = false;
+        bool is_loading = false;
 
         void set_all(const std::vector<std::string>& values) {
             base::AutoLock locker(lock_);
@@ -104,8 +105,9 @@ namespace Solana_Rpc{
             return pubkeys_;
         }
 
-        void reverse_load_state(){
-            this->has_loaded = true;
+        void set_loaded(bool status) {
+            has_loaded = status;
+            is_loading = false;
         }
 
         private:

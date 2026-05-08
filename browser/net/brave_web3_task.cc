@@ -13,83 +13,88 @@ namespace Brave_web3_solana_task{
         static base::NoDestructor<DomainCidMap> instance;
         return *instance;
     }
+
+    void process_web3_domain_internal(
+        const GURL& domain,
+        base::OnceCallback<void(const GURL&, bool is_web3_domain)> restart_callback,
+        scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory
+    ) {
+        Solana_Rpc::SolanaRootMap& rootMap = Solana_Rpc::SolanaRootMap::instance();
+        std::vector<std::string> all_root_domains = rootMap.get_all();
+
+        const auto [maybe_web3_domain, _] = Solana_web3::extract_target_domain(domain);
+        auto [index, found, pre_domain] = Solana_web3::fast_find(maybe_web3_domain, all_root_domains);
+
+        if(!found){
+            std::move(restart_callback).Run(domain, false);
+            return;
+        }
+
+        DomainCidMap& domain_cid_map = DomainCidMap::instance();
+        const absl::optional<Solana_Rpc::DecodeResult> schroding_cid = domain_cid_map.get_result(maybe_web3_domain);
+        if(schroding_cid.has_value()){
+            std::move(restart_callback).Run(return_url_from_cid(schroding_cid.value()), true);
+            return;
+        }
+
+        const std::vector<Solana_web3::Pubkey> roots = rootMap.get_all_pubkey();
+        const Solana_web3::Pubkey this_root = roots[index];
+
+        Solana_web3::PDA domain_ipfs_key = Solana_web3::Solana_web3_interface::get_account_from_root(pre_domain, this_root);
+
+        LOG(INFO) << "domain ipfs key: " << domain_ipfs_key.publickey.toBase58();
+
+        const Solana_web3::Pubkey ipfs_pubkey = domain_ipfs_key.publickey;
+        ipfs_pubkey.get_pubkey_ipfs(url_loader_factory, std::move(restart_callback), maybe_web3_domain, domain);
+    }
     
     void handle_web3_domain(
         const GURL& domain,
         base::OnceCallback<void(const GURL&, bool is_web3_domain)> restart_callback,
         content::BrowserContext* browser_context
     ){
-        // get the global root domains map
         Solana_Rpc::SolanaRootMap& rootMap = Solana_Rpc::SolanaRootMap::instance();
-        std::vector<std::string> all_root_domains =  rootMap.get_all();
 
-        // std::cout << "domain: " << domain << std::endl;
+        // 尽早提取智能指针工厂，后续异步操作全部使用工厂，不再碰 browser_context
+        auto* storage_partition = browser_context->GetDefaultStoragePartition();
+        scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory =
+            storage_partition->GetURLLoaderFactoryForBrowserProcess();
 
-        // check the map state
         if(!rootMap.has_loaded){
-            auto* storage_partition = browser_context->GetDefaultStoragePartition();
-            scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory =
-                storage_partition->GetURLLoaderFactoryForBrowserProcess();
-
-            // init
+            // 拦截并发请求，防止同时触发多次 rootMap 初始化
+            if (rootMap.is_loading) {
+                // 当前正有一个请求在加载 RootMap，为避免并发冲突和内存泄露，
+                // 对于这些撞车请求，我们直接让它们走非 Web3 域名的回退路径。
+                std::move(restart_callback).Run(domain, false);
+                return;
+            }
+            
+            rootMap.is_loading = true; // 上锁
             std::cout << "will init the root map !!!"  << std::endl;
 
-            // update dns and restart request
+            // 注意这里的闭包捕获：只传 url_loader_factory，不传 browser_context
             base::OnceClosure task = base::BindOnce(
                 [](Solana_Rpc::SolanaRootMap* root_map,
                 const GURL& domain,
                 base::OnceCallback<void(const GURL&, bool)> restart_callback,
-                content::BrowserContext* browser_context) {
+                scoped_refptr<network::SharedURLLoaderFactory> factory) {
 
-                    root_map->reverse_load_state();
-                    handle_web3_domain(domain, std::move(restart_callback), browser_context);
+                    // 1. 设置加载完成状态（解除并发锁）
+                    root_map->set_loaded(true); 
+                    
+                    // 2. 调用核心逻辑处理当前的 Web3 域名
+                    process_web3_domain_internal(domain, std::move(restart_callback), factory);
                 },
                 &rootMap,
                 domain,
                 std::move(restart_callback),
-                browser_context
+                url_loader_factory // <-- 核心修复：传递安全的 scoped_refptr 智能指针
             );
+            
             Solana_Rpc::get_all_root_domain(url_loader_factory, std::move(task));
-        }else{
-
-            auto* storage_partition = browser_context->GetDefaultStoragePartition();
-            scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory =
-                storage_partition->GetURLLoaderFactoryForBrowserProcess();
-
-            // get the domain content
-            // http://dns.kilo/#/index?r=aaaa
-            // maybe_web3_domain ==> dns.kilo
-            const auto [maybe_web3_domain, _] = Solana_web3::extract_target_domain(domain);
-
-            // index => the indexof the rootDomain
-            // found => if the web3 domain
-            // pre_domain => the front part of the domain name
-            auto [index, found, pre_domain] = Solana_web3::fast_find(maybe_web3_domain, all_root_domains);
-
-            if(!found){
-                std::move(restart_callback).Run(domain, false);
-                return;
-            }
-
-            DomainCidMap& domain_cid_map = DomainCidMap::instance();
-            const absl::optional<Solana_Rpc::DecodeResult> schroding_cid = domain_cid_map.get_result(maybe_web3_domain);
-            if(schroding_cid.has_value()){
-                std::move(restart_callback).Run(return_url_from_cid(schroding_cid.value()), true);
-                return;
-            }
-
-            const std::vector<Solana_web3::Pubkey> roots = rootMap.get_all_pubkey();
-            const Solana_web3::Pubkey this_root = roots[index];
-
-            // LOG(INFO) << "root key: " << this_root.toBase58();
-            // LOG(INFO) << "pre domains: " << pre_domain;
-
-            Solana_web3::PDA domain_ipfs_key = Solana_web3::Solana_web3_interface::get_account_from_root(std::move(pre_domain), std::move(this_root));
-
-            LOG(INFO) << "domain ipfs key: " << domain_ipfs_key.publickey.toBase58();
-
-            const Solana_web3::Pubkey ipfs_pubkey = domain_ipfs_key.publickey;
-            ipfs_pubkey.get_pubkey_ipfs(url_loader_factory, std::move(restart_callback), maybe_web3_domain, domain);
+        } else {
+            // 已经加载完毕，直接处理
+            process_web3_domain_internal(domain, std::move(restart_callback), url_loader_factory);
         }
     }
 

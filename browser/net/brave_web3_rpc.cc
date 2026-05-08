@@ -233,7 +233,7 @@ namespace Solana_Rpc{
             std::move(task).Run();
             return;
         }
-        const base::Value::List* value_list = std::move(result_dict)->FindList("value");
+        const base::Value::List* value_list = result_dict->FindList("value");
         if (!value_list) {
             LOG(ERROR) << "No 'value' field or not a list";
             std::move(task).Run();

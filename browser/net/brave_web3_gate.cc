@@ -330,7 +330,7 @@ namespace Kilo_Gate {
 
         // std::string json_string;
         // loader->AttachStringForUpload(json_string, "application/json");
-        loader->SetTimeoutDuration(base::Seconds(3));
+        loader->SetTimeoutDuration(base::Seconds(5));
         auto* loader_ptr = loader.get();
         std::cout << "ipfs test: " << get_rpc_record_ipfs(this_gate) << std::endl;
 

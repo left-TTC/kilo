@@ -48,6 +48,12 @@ namespace Brave_web3_solana_task{
         std::map<std::string, Solana_Rpc::DecodeResult> domain_cid_map_;
     };
 
+    void process_web3_domain_internal(
+        const GURL& domain,
+        base::OnceCallback<void(const GURL&, bool is_web3_domain)> restart_callback,
+        scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory
+    );
+
     void handle_web3_domain(
         const GURL& domain,
         base::OnceCallback<void(const GURL&, bool is_web3_domain)> restart_callback,
