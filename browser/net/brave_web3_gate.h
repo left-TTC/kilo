@@ -83,6 +83,7 @@ namespace Kilo_Gate {
         std::vector<std::string> get() const;
 
         bool next_index();
+        bool last_index();
 
         size_t active_index() const;
         size_t ture_index() const;

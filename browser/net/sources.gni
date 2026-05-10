@@ -60,6 +60,8 @@ brave_browser_net_sources = [
   "//brave/browser/net/brave_web3_task.h",
   "//brave/browser/net/brave_web3_gate.cc",
   "//brave/browser/net/brave_web3_gate.h",
+  "//brave/browser/net/brave_web3_ipfs.cc",
+  "//brave/browser/net/brave_web3_ipfs.h",
 ]
 
 brave_browser_net_deps = [

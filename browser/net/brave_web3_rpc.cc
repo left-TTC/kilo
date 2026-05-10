@@ -311,15 +311,16 @@ namespace Solana_Rpc{
 
             std::string ultimate_url_str;
             Kilo_Gate::IPFSGate& ipfs_map = Kilo_Gate::IPFSGate::instance();
+
             size_t index = ipfs_map.active_index();
             if(ipfs_map.if_able() && index != 10086){
                 std::cout << "Use useful ipfs gate" << std::endl;
                 ultimate_url_str = ipfs_map.get()[index];
             }else{
-                ultimate_url_str = "https://127.0.0.1:8080";
+                ultimate_url_str = "https://127.0.0.1:8888";
             }
 
-            std::cout << "TTTTT: " << ultimate_url_str << "index: " << index << std::endl;
+            std::cout << "TTTTT: " << ultimate_url_str << " index: " << index << std::endl;
 
             switch(decode_result.record_type){
                 case RecordType::IPFS:
@@ -333,14 +334,29 @@ namespace Solana_Rpc{
                     break;
             }
 
-            ultimate_url_str += decode_result.decoded;
+            Kilo_Ipfs::ActiveCanonical& instance = Kilo_Ipfs::ActiveCanonical::instance();
+            std::string canonial = instance.ReturnSubdomain();
+
+            GURL last_url;
+
+            if(canonial.size()>0 && instance.GetCanonicalUsablity()){
+                std::cout << "Canonial is avaliable, use canonial" << std::endl;
+                if(Kilo_Ipfs::IsCIDv0(decode_result.decoded)){
+                    ultimate_url_str += Kilo_Ipfs::CIDv0ToV1(decode_result.decoded);
+                }else{
+                    ultimate_url_str += decode_result.decoded;
+                }
+
+                last_url = Kilo_Ipfs::RedirectIpfs(ultimate_url_str, canonial);
+            }else{
+                ultimate_url_str += decode_result.decoded;
+                last_url = GURL(ultimate_url_str);
+            }
 
             Brave_web3_solana_task::DomainCidMap& domain_cid_map = Brave_web3_solana_task::DomainCidMap::instance();
             domain_cid_map.insert_or_update(maybe_domain, decode_result);
 
-            LOG(INFO) << "url ipfs: " << ultimate_url_str;
-
-            return GURL(ultimate_url_str);
+            return last_url;
         }
 
         return GURL("chrome://newtab/");

@@ -12,6 +12,7 @@
 
 #include "brave_web3_rpc.h"
 #include "brave_web3_gate.h"
+#include "brave_web3_ipfs.h"
 
 namespace Brave_web3_solana_task{
 

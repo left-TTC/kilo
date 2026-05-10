@@ -40,6 +40,7 @@
 
 #include "brave/browser/net/brave_web3_service.h"
 #include "brave_web3_gate.h"
+#include "brave_web3_ipfs.h"
 
 namespace Solana_Rpc{
 

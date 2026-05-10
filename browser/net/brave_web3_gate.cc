@@ -1,11 +1,11 @@
 
 #include "brave_web3_gate.h"
-
+#include "brave_web3_ipfs.h"
 
 namespace Kilo_Gate {
 
     GURL get_rpc_record_ipfs(std::string ipfs){
-        return GURL(ipfs + "/ipns/k51qzi5uqu5djyav42cp4p1cwomu0j8njt1tlccy4ozdpusiv5l06widhyklgg");
+        return GURL(ipfs + "/ipns/k51qzi5uqu5dj0nlwyfdamszzht21c52x6bgzs7kfp0hk7bca0q6ktggh6kyl7");
     }
 
     std::vector<std::string> GetRpcFromContent(const std::string& input) {
@@ -208,8 +208,8 @@ namespace Kilo_Gate {
 
         std::vector<std::string> IPFS_gates;
 
-        IPFS_gates.push_back(normalize("https://ipfs.io"));
         IPFS_gates.push_back(normalize("http://127.0.0.1:8888"));
+        IPFS_gates.push_back(normalize("https://ipfs.io"));
 
         PrefService* prefs = g_browser_process->local_state();
         if (prefs) {
@@ -226,6 +226,8 @@ namespace Kilo_Gate {
                 }
             }
         }
+
+        IPFS_gates.push_back(normalize("IPFS_GUARD"));
 
         std::unordered_set<std::string> seen;
         std::vector<std::string> deduped;
@@ -263,6 +265,19 @@ namespace Kilo_Gate {
         return true;
     }
 
+    bool IPFSGate::last_index() {
+        base::AutoLock lock(lock_);
+
+        if (ipfs_list_.empty())
+            return false;
+        
+        if(active_index_ == 0 || active_index_==10086) return false;
+
+        active_index_--;
+
+        return true;
+    }
+
     size_t IPFSGate::active_index() const {
         base::AutoLock lock(lock_);
         return active_index_;
@@ -289,6 +304,8 @@ namespace Kilo_Gate {
         }
 
         std::vector<std::string> ipfs_gates = ipfs_map.get();
+
+        // This annotation can be used twice
         net::NetworkTrafficAnnotationTag traffic_annotation =
             net::DefineNetworkTrafficAnnotation(
                 "ipns_txt_resolve_request",
@@ -316,53 +333,161 @@ namespace Kilo_Gate {
                         "name is transmitted."
         })");
 
-        auto resource_request = std::make_unique<network::ResourceRequest>();
+        // frist get the ipfsgateway reflection table get useable ipfs gateway
+        Kilo_Ipfs::ActiveCanonical& instance = Kilo_Ipfs::ActiveCanonical::instance();
 
-        // maybe -1
-        std::string this_gate = ipfs_gates[ipfs_map.active_index()];
-        resource_request->url = get_rpc_record_ipfs(this_gate);
-        resource_request->method = "GET";
-        resource_request->credentials_mode = network::mojom::CredentialsMode::kOmit;
+        if(!instance.GetChecked()){
+            // maybe -1
+            std::string this_gate = ipfs_gates[ipfs_map.active_index()];
 
-        std::unique_ptr<network::SimpleURLLoader> loader =
-            network::SimpleURLLoader::Create(std::move(resource_request),
-                                            traffic_annotation);
+            auto resource_request = std::make_unique<network::ResourceRequest>();
+            resource_request->url = Kilo_Ipfs::get_gateway_record(this_gate);
+            resource_request->method = "GET";
+            resource_request->credentials_mode = network::mojom::CredentialsMode::kOmit;
 
-        // std::string json_string;
-        // loader->AttachStringForUpload(json_string, "application/json");
-        loader->SetTimeoutDuration(base::Seconds(5));
-        auto* loader_ptr = loader.get();
-        std::cout << "ipfs test: " << get_rpc_record_ipfs(this_gate) << std::endl;
+            std::cout << "Get reflection table from " << Kilo_Ipfs::get_gateway_record(this_gate) << std::endl;
 
-        loader_ptr->DownloadToStringOfUnboundedSizeUntilCrashAndDie(
-            url_loader_factory.get(),
-            base::BindOnce(
-                [](std::unique_ptr<network::SimpleURLLoader> loader,
-                    scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory,
-                    base::OnceClosure task,
-                    std::optional<std::string> response) {
+            std::unique_ptr<network::SimpleURLLoader> loader =
+                network::SimpleURLLoader::Create(std::move(resource_request),
+                                                traffic_annotation);
 
-                        std::string content = response.value_or("");
-                        if(content == ""){
-                            // means ipfs gate is disabled
-                            std::cout << "IPFS disable" << std::endl;
-                            // index += 1
-                            // IPFSGate& ipfs_map = IPFSGate::instance();
-                            // ipfs_map.active_index();
-                        }else {
-                            IPFSGate& ipfs_map = IPFSGate::instance();
-                            ipfs_map.set_able();
+            loader->SetTimeoutDuration(base::Seconds(5));
+            auto* loader_ptr = loader.get();
 
-                            RpcAgent& rpc_map = RpcAgent::instance();
-                            std::vector<std::string> rpc_agents = GetRpcFromContent(content);
-                            AddUsrRpc(rpc_agents);
-                            rpc_map.update(rpc_agents);
-                            std::cout << "IPFS able: update rpc lists: "<< std::endl;
-                        }
-                        std::move(task).Run();
-                    },
-                std::move(loader), url_loader_factory, std::move(task)));
+            loader_ptr->DownloadToStringOfUnboundedSizeUntilCrashAndDie(
+                url_loader_factory.get(),
+                base::BindOnce(
+                    [](std::unique_ptr<network::SimpleURLLoader> loader,
+                        base::OnceClosure task,
+                        std::string this_gate,
+                        std::optional<std::string> response) {
 
+                            std::string content = response.value_or("");
+                            if(content == ""){
+                                std::cout << "Current IPFS disable" << std::endl;
+                            }else {
+                                IPFSGate& ipfs_map = IPFSGate::instance();
+                                ipfs_map.set_able();
+
+                                Kilo_Ipfs::ActiveCanonical& instance = Kilo_Ipfs::ActiveCanonical::instance();
+                                instance.LoadFromTxt(content, this_gate);
+                                instance.SetChecked();
+                            }
+                            return std::move(task).Run();
+                        },
+                    std::move(loader), std::move(task), this_gate)
+            );
+        }else {
+            std::cout << "Loaded Ipfs gateway, now test for subdomain" << std::endl;
+            // last loop make index += 1, we should sub 1 here
+            std::string this_gate = ipfs_gates[ipfs_map.active_index() - 1];
+            ipfs_map.last_index();
+
+            auto resource_request = std::make_unique<network::ResourceRequest>();
+
+            std::string sub_link = instance.ReturnSubdomain();
+
+            GURL direct_url = get_rpc_record_ipfs(this_gate);
+            if(sub_link.size() > 0 && !instance.GetCanonicalUsablityChecked()){
+                // The gateway has subdomain function and not checked
+                GURL rpc_request_site = Kilo_Ipfs::RedirectIpfs(direct_url.spec(), sub_link);
+
+                resource_request->url = rpc_request_site;
+                resource_request->method = "GET";
+                resource_request->credentials_mode = network::mojom::CredentialsMode::kOmit;
+
+                std::unique_ptr<network::SimpleURLLoader> loader =
+                    network::SimpleURLLoader::Create(std::move(resource_request),
+                                                    traffic_annotation);
+
+                // std::string json_string;
+                // loader->AttachStringForUpload(json_string, "application/json");
+                loader->SetTimeoutDuration(base::Seconds(5));
+                auto* loader_ptr = loader.get();
+
+                loader_ptr->DownloadToStringOfUnboundedSizeUntilCrashAndDie(
+                    url_loader_factory.get(),
+                    base::BindOnce(
+                        [](std::unique_ptr<network::SimpleURLLoader> loader,
+                            scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory,
+                            base::OnceClosure task,
+                            std::optional<std::string> response) {
+
+                                std::string content = response.value_or("");
+                                Kilo_Ipfs::ActiveCanonical& instance = Kilo_Ipfs::ActiveCanonical::instance();
+
+                                if(content == ""){
+                                    // means ipfs gate is disabled
+                                    std::cout << "Subdomain can't be accessed" << std::endl;
+                                }else {
+
+                                    std::cout << "Subdomain AVAILABLE" << std::endl;
+                                    
+                                    RpcAgent& rpc_map = RpcAgent::instance();
+                                    std::vector<std::string> rpc_agents = GetRpcFromContent(content);
+                                    AddUsrRpc(rpc_agents);
+                                    rpc_map.update(rpc_agents);
+                                    std::cout << "IPFS able: update rpc lists: "<< std::endl;
+                                    
+                                    // set sub can be used
+                                    instance.SetCanonicalUsablity(true);
+                                }
+                                // set checked
+                                instance.SetCanonicalUsablityChecked(true);
+                                std::move(task).Run();
+                            },
+                        std::move(loader), url_loader_factory, std::move(task)));
+
+            }else {
+                // no subdomain visit or visit can't be used
+                resource_request->url = direct_url;
+                resource_request->method = "GET";
+                resource_request->credentials_mode = network::mojom::CredentialsMode::kOmit;
+
+                std::unique_ptr<network::SimpleURLLoader> loader =
+                    network::SimpleURLLoader::Create(std::move(resource_request),
+                                                    traffic_annotation);
+
+                // std::string json_string;
+                // loader->AttachStringForUpload(json_string, "application/json");
+                loader->SetTimeoutDuration(base::Seconds(5));
+                auto* loader_ptr = loader.get();
+                
+                std::cout << "ipfs test: " << get_rpc_record_ipfs(this_gate) << std::endl;
+
+                loader_ptr->DownloadToStringOfUnboundedSizeUntilCrashAndDie(
+                    url_loader_factory.get(),
+                    base::BindOnce(
+                        [](std::unique_ptr<network::SimpleURLLoader> loader,
+                            scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory,
+                            base::OnceClosure task,
+                            std::optional<std::string> response) {
+
+                                std::string content = response.value_or("");
+                                Kilo_Ipfs::ActiveCanonical& instance = Kilo_Ipfs::ActiveCanonical::instance();
+
+                                if(content == ""){
+                                    // means ipfs gate is disabled
+                                    std::cout << "Direct can't be accessed" << std::endl;
+                                }else {
+                                    std::cout << "Subdomain UNAVAILABLE, use Directly" << std::endl;
+
+                                    RpcAgent& rpc_map = RpcAgent::instance();
+                                    std::vector<std::string> rpc_agents = GetRpcFromContent(content);
+                                    AddUsrRpc(rpc_agents);
+                                    rpc_map.update(rpc_agents);
+                                    std::cout << "IPFS able: update rpc lists: "<< std::endl;
+
+                                    // set sub can't be used
+                                    instance.SetCanonicalUsablity(false);
+                                }
+                                instance.SetCanonicalUsablityChecked(true);
+                                std::move(task).Run();
+                            },
+                        std::move(loader), url_loader_factory, std::move(task)));
+            }
+
+        }
     }
 
 }

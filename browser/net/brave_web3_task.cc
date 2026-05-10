@@ -182,7 +182,7 @@ namespace Brave_web3_solana_task{
         if(ipfs_map.if_able() && index != 10086){
             new_url = ipfs_map.get()[index];
         }else{
-            new_url = "https://127.0.0.1:8080";
+            new_url = "https://127.0.0.1:8888";
         }
         
         switch(result.record_type){
@@ -197,8 +197,26 @@ namespace Brave_web3_solana_task{
                 break;
         }
 
-        new_url += result.decoded;
-        return GURL(new_url);
+        Kilo_Ipfs::ActiveCanonical& instance = Kilo_Ipfs::ActiveCanonical::instance();
+        std::string canonial = instance.ReturnSubdomain();
+
+        GURL last_url;
+
+        if(canonial.size()>0 && instance.GetCanonicalUsablity()){
+            std::cout << "Canonial is avaliable, use canonial" << std::endl;
+            if(Kilo_Ipfs::IsCIDv0(result.decoded)){
+                new_url += Kilo_Ipfs::CIDv0ToV1(result.decoded);
+            }else{
+                new_url += result.decoded;
+            }
+
+            last_url = Kilo_Ipfs::RedirectIpfs(new_url, canonial);
+        }else{
+            new_url += result.decoded;
+            last_url = GURL(new_url);
+        }
+
+        return last_url;
     }
 
 
