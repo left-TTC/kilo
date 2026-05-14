@@ -69,6 +69,24 @@ namespace Brave_web3_solana_task{
     GURL return_url_from_cid(const Solana_Rpc::DecodeResult& result);
     
     void omnibox_match_judge(GURL& frist_destination_url);
+
+    class KiloTips{
+    public:
+        static KiloTips& instance();
+
+        bool CheckClocked() const;
+        void SetClocked();
+
+        private:
+        friend class base::NoDestructor<KiloTips>;
+        KiloTips();
+        ~KiloTips(); 
+
+        mutable base::Lock lock_;
+        bool clocked_ = false;
+    };
+
+    std::string GetKiloTipsAlert();
 }
 
 #endif

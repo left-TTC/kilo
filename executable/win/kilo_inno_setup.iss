@@ -66,7 +66,7 @@ Source: "{#ReleaseDir}\dxil.dll"; DestDir: "{app}"
 
 ; ANGLE / locale / 子文件夹递归
 Source: "{#ReleaseDir}\angledata\*"; DestDir: "{app}\angledata"; Flags: recursesubdirs createallsubdirs
-Source: "{#ReleaseDir}\locales\*"; DestDir: "{app}\locales"; Flags: recursesubdirs createallsubdirs
+Source: "{#ReleaseDir}\locales\*"; DestDir: "{app}\locales"; Flags: recursesubdirs createallsubdirs; Excludes: "*.info"
 Source: "{#ReleaseDir}\MEIPreload\*"; DestDir: "{app}\MEIPreload"; Flags: recursesubdirs createallsubdirs
 Source: "{#ReleaseDir}\PrivacySandboxAttestationsPreloaded\*"; DestDir: "{app}\PrivacySandboxAttestationsPreloaded"; Flags: recursesubdirs createallsubdirs
 
@@ -76,5 +76,5 @@ Source: "{#ReleaseDir}\chrome.VisualElementsManifest.xml"; DestDir: "{app}"
 Source: "{#ReleaseDir}\mobileprovisions.filelist"; DestDir: "{app}"
 
 [Icons]
-Name: "{group}\Kilo"; Filename: "{app}\Kilo.exe"
-Name: "{commondesktop}\Kilo"; Filename: "{app}\kilo.exe"; WorkingDir: "{app}"
+Name: "{group}\Kilo Browser"; Filename: "{app}\kilo.exe"
+Name: "{commondesktop}\Kilo Browser"; Filename: "{app}\kilo.exe"; WorkingDir: "{app}"

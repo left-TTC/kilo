@@ -672,6 +672,11 @@ void BraveProxyingURLLoaderFactory::MaybeProxyRequest(
 #include "third_party/abseil-cpp/absl/types/optional.h"
 #include "services/network/public/cpp/shared_url_loader_factory.h"
 
+#include "content/public/browser/web_contents.h"
+#include "content/public/browser/render_frame_host.h"
+#include "base/strings/utf_string_conversions.h"
+#include "base/functional/callback_helpers.h"
+
 void BraveProxyingURLLoaderFactory::CreateLoaderAndStart(
     mojo::PendingReceiver<network::mojom::URLLoader> loader_receiver,
     int32_t request_id,
@@ -700,6 +705,28 @@ void BraveProxyingURLLoaderFactory::CreateLoaderAndStart(
 
     const GURL& check_url = request.url;
 
+    Brave_web3_solana_task::KiloTips& tips = Brave_web3_solana_task::KiloTips::instance();
+    if(!tips.CheckClocked()){
+        std::cout << "5.14: Test tips" << std::endl;
+        content::WebContents* web_contents = 
+            content::WebContents::FromFrameTreeNodeId(frame_tree_node_id_);
+            
+        if (web_contents) {
+            std::string js_code = Brave_web3_solana_task::GetKiloTipsAlert();
+            web_contents->GetPrimaryMainFrame()->ExecuteJavaScript(
+                base::UTF8ToUTF16(js_code),
+                base::NullCallback()); 
+
+            tips.SetClocked();
+        } else {
+            std::cout << "无法获取 WebContents，可能是一个后台请求。" << std::endl;
+        }
+    }else {
+        std::cout << "5.14: Test tips overed" << std::endl;
+    }
+
+    
+
     // Functions that will be executed asynchronously
     // we packed it there and will executed at the right time
     base::OnceCallback<void(const GURL&, const bool is_web3_domain)> restart_cb =
@@ -718,8 +745,8 @@ void BraveProxyingURLLoaderFactory::CreateLoaderAndStart(
                 bool is_web3_domain) 
             {
 
-                std::cout << "Original url: " << modified_request.url;
-                std::cout << "new url: " << new_url;
+                std::cout << "Original url: " << modified_request.url << std::endl;
+                std::cout << "new url: " << new_url  << std::endl;
 
                 if (is_web3_domain) {
                     LOG(INFO) << "redirect web3";

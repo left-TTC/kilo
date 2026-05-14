@@ -55,45 +55,37 @@ namespace Brave_web3_solana_task{
     ){
         Solana_Rpc::SolanaRootMap& rootMap = Solana_Rpc::SolanaRootMap::instance();
 
-        // 尽早提取智能指针工厂，后续异步操作全部使用工厂，不再碰 browser_context
         auto* storage_partition = browser_context->GetDefaultStoragePartition();
         scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory =
             storage_partition->GetURLLoaderFactoryForBrowserProcess();
 
         if(!rootMap.has_loaded){
-            // 拦截并发请求，防止同时触发多次 rootMap 初始化
             if (rootMap.is_loading) {
-                // 当前正有一个请求在加载 RootMap，为避免并发冲突和内存泄露，
-                // 对于这些撞车请求，我们直接让它们走非 Web3 域名的回退路径。
                 std::move(restart_callback).Run(domain, false);
                 return;
             }
             
-            rootMap.is_loading = true; // 上锁
+            rootMap.is_loading = true; 
             std::cout << "will init the root map !!!"  << std::endl;
 
-            // 注意这里的闭包捕获：只传 url_loader_factory，不传 browser_context
             base::OnceClosure task = base::BindOnce(
                 [](Solana_Rpc::SolanaRootMap* root_map,
                 const GURL& domain,
                 base::OnceCallback<void(const GURL&, bool)> restart_callback,
                 scoped_refptr<network::SharedURLLoaderFactory> factory) {
 
-                    // 1. 设置加载完成状态（解除并发锁）
                     root_map->set_loaded(true); 
                     
-                    // 2. 调用核心逻辑处理当前的 Web3 域名
                     process_web3_domain_internal(domain, std::move(restart_callback), factory);
                 },
                 &rootMap,
                 domain,
                 std::move(restart_callback),
-                url_loader_factory // <-- 核心修复：传递安全的 scoped_refptr 智能指针
+                url_loader_factory 
             );
             
             Solana_Rpc::get_all_root_domain(url_loader_factory, std::move(task));
         } else {
-            // 已经加载完毕，直接处理
             process_web3_domain_internal(domain, std::move(restart_callback), url_loader_factory);
         }
     }
@@ -254,5 +246,111 @@ namespace Brave_web3_solana_task{
         }
     }
 
+    KiloTips::KiloTips() = default;
+    KiloTips::~KiloTips() = default;
+
+    KiloTips& KiloTips::instance() {
+        static base::NoDestructor<KiloTips> instance;
+        return *instance;
+    }
+
+    bool KiloTips::CheckClocked() const{
+        base::AutoLock lock(lock_);
+        return clocked_;
+    }
+    void KiloTips::SetClocked(){
+        base::AutoLock lock(lock_);
+        clocked_ = true;
+    }
+
+    std::string GetKiloTipsAlert() {
+    // 使用 R"JS(...)JS" 定义原始字符串
+    return R"JS(
+        (function() {
+            // 1. 获取语言和文案
+            const lang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
+            let msg = 'Getting Kilo service, please do not close the page until it is stable.';
+            
+            if (lang.startsWith('zh')) {
+                msg = '正在获取 Kilo 服务，请不要在页面稳定之前关闭页面。';
+            } else if (lang.startsWith('es')) {
+                msg = 'Obteniendo el servicio Kilo, por favor no cierre la página hasta que esté estable.';
+            } else if (lang.startsWith('fr')) {
+                msg = 'Obtention du service Kilo, veuillez ne pas fermer la page avant qu\'elle ne soit stable.';
+            } else if (lang.startsWith('ja')) {
+                msg = 'Kilo サービスを取得しています。ページが安定するまで閉じないでください。';
+            } else if (lang.startsWith('ko')) {
+                msg = 'Kilo 서비스를 가져오는 중입니다. 페이지가 안정될 때까지 닫지 마십시오.';
+            } else if (lang.startsWith('de')) {
+                msg = 'Kilo-Dienst wird abgerufen, bitte schließen Sie die Seite nicht, bevor sie stabil ist.';
+            } else if (lang.startsWith('ru')) {
+                msg = 'Получение службы Kilo, пожалуйста, не закрывайте страницу, пока она не стабилизируется.';
+            } else if (lang.startsWith('pt')) {
+                msg = 'Obtendo o serviço Kilo, por favor, não feche a página até que ela esteja estável.';
+            } else if (lang.startsWith('ar')) {
+                msg = 'جاري الحصول على خدمة Kilo، يرجى عدم إغلاق الصفحة حتى تستقر.';
+            } else if (lang.startsWith('hi')) {
+                msg = 'Kilo सेवा प्राप्त की जा रही है, कृपया पृष्ठ के स्थिर होने तक इसे बंद न करें।';
+            } else if (lang.startsWith('it')) {
+                msg = 'Ottenimento del servizio Kilo in corso, si prega di non chiudere la pagina finché non è stabile.';
+            }
+
+            // 2. 确保 document body 存在（有些极速跳转的请求可能 body 还没准备好）
+            if (!document.body) {
+                console.warn('Body not ready for Kilo alert');
+                return;
+            }
+
+            // 3. 动态创建自定义提示框 (Toast UI)
+            const alertBox = document.createElement('div');
+            alertBox.innerText = msg;
+            
+            // 设置 CSS 样式，使其居中显示在顶部，且具有 Brave 风格的橙色提示
+            Object.assign(alertBox.style, {
+                position: 'fixed',
+                top: '20px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                backgroundColor: '#222', 
+                color: '#ffffff',
+                padding: '12px 24px',
+                borderRadius: '8px',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                zIndex: '2147483647', 
+                fontFamily: 'system-ui, -apple-system, sans-serif',
+                fontSize: '14px',
+                fontWeight: '500',
+                textAlign: 'center',
+                opacity: '0',
+                transition: 'opacity 0.3s ease-in-out, top 0.3s ease-in-out',
+                pointerEvents: 'none' // 防止阻挡用户点击下面的元素
+            });
+
+            document.body.appendChild(alertBox);
+
+            // 触发淡入动画 (需要一点点延迟让浏览器应用初始样式)
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    alertBox.style.opacity = '1';
+                    alertBox.style.top = '30px';
+                });
+            });
+
+            // 4. 设定 3 秒 (3000ms) 后触发淡出并移除
+            setTimeout(() => {
+                alertBox.style.opacity = '0';
+                alertBox.style.top = '20px';
+                
+                // 等待淡出动画结束 (300ms) 后将元素从 DOM 中彻底删除
+                setTimeout(() => {
+                    if (alertBox.parentNode) {
+                        alertBox.parentNode.removeChild(alertBox);
+                    }
+                }, 300);
+            }, 3000);
+            
+        })();
+    )JS";
+}
 }
 
