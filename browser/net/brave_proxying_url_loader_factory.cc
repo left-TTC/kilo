@@ -677,6 +677,20 @@ void BraveProxyingURLLoaderFactory::MaybeProxyRequest(
 #include "base/strings/utf_string_conversions.h"
 #include "base/functional/callback_helpers.h"
 
+#include "ui/message_center/public/cpp/notification_delegate.h"
+#include "base/memory/scoped_refptr.h"
+
+#include "chrome/browser/profiles/profile.h"
+#include "chrome/browser/notifications/notification_display_service.h"
+#include "chrome/browser/notifications/notification_handler.h"
+#include "ui/message_center/public/cpp/notification.h"
+#include "ui/message_center/public/cpp/notifier_id.h"
+#include "chrome/browser/notifications/notification_display_service_factory.h"
+
+#include "components/vector_icons/vector_icons.h"
+#include "ui/base/models/image_model.h"
+#include "ui/color/color_id.h"
+
 void BraveProxyingURLLoaderFactory::CreateLoaderAndStart(
     mojo::PendingReceiver<network::mojom::URLLoader> loader_receiver,
     int32_t request_id,
@@ -707,25 +721,34 @@ void BraveProxyingURLLoaderFactory::CreateLoaderAndStart(
 
     Brave_web3_solana_task::KiloTips& tips = Brave_web3_solana_task::KiloTips::instance();
     if(!tips.CheckClocked()){
-        std::cout << "5.14: Test tips" << std::endl;
-        content::WebContents* web_contents = 
-            content::WebContents::FromFrameTreeNodeId(frame_tree_node_id_);
+        Profile* profile = Profile::FromBrowserContext(browser_context_);
+        if (profile) {
+            message_center::Notification notification(
+                message_center::NOTIFICATION_TYPE_SIMPLE, 
+                "kilo_web3_alert",                        
+                std::u16string(u"About Loading"),            
+                std::u16string(u"Getting Kilo domain service, please keep the loading page open until the loading is finished"), // 正文
+                ui::ImageModel::FromVectorIcon(
+                    vector_icons::kProductRefreshIcon, 
+                    ui::kColorIcon,          
+                    16                    
+                ),                        
+                std::u16string(u"Kilo"),                 
+                GURL(),                                  
+                message_center::NotifierId(message_center::NotifierType::SYSTEM_COMPONENT, "brave_web3"),
+                message_center::RichNotificationData(),   
+                base::MakeRefCounted<message_center::NotificationDelegate>()                              
+            );
+
+            NotificationDisplayServiceFactory::GetForProfile(profile)->Display(
+                NotificationHandler::Type::TRANSIENT, 
+                notification, 
+                /*metadata=*/nullptr
+            );
             
-        if (web_contents) {
-            std::string js_code = Brave_web3_solana_task::GetKiloTipsAlert();
-            web_contents->GetPrimaryMainFrame()->ExecuteJavaScript(
-                base::UTF8ToUTF16(js_code),
-                base::NullCallback()); 
-
             tips.SetClocked();
-        } else {
-            std::cout << "无法获取 WebContents，可能是一个后台请求。" << std::endl;
         }
-    }else {
-        std::cout << "5.14: Test tips overed" << std::endl;
     }
-
-    
 
     // Functions that will be executed asynchronously
     // we packed it there and will executed at the right time
