@@ -672,6 +672,25 @@ void BraveProxyingURLLoaderFactory::MaybeProxyRequest(
 #include "third_party/abseil-cpp/absl/types/optional.h"
 #include "services/network/public/cpp/shared_url_loader_factory.h"
 
+#include "content/public/browser/web_contents.h"
+#include "content/public/browser/render_frame_host.h"
+#include "base/strings/utf_string_conversions.h"
+#include "base/functional/callback_helpers.h"
+
+#include "ui/message_center/public/cpp/notification_delegate.h"
+#include "base/memory/scoped_refptr.h"
+
+#include "chrome/browser/profiles/profile.h"
+#include "chrome/browser/notifications/notification_display_service.h"
+#include "chrome/browser/notifications/notification_handler.h"
+#include "ui/message_center/public/cpp/notification.h"
+#include "ui/message_center/public/cpp/notifier_id.h"
+#include "chrome/browser/notifications/notification_display_service_factory.h"
+
+#include "components/vector_icons/vector_icons.h"
+#include "ui/base/models/image_model.h"
+#include "ui/color/color_id.h"
+
 void BraveProxyingURLLoaderFactory::CreateLoaderAndStart(
     mojo::PendingReceiver<network::mojom::URLLoader> loader_receiver,
     int32_t request_id,
@@ -700,6 +719,37 @@ void BraveProxyingURLLoaderFactory::CreateLoaderAndStart(
 
     const GURL& check_url = request.url;
 
+    Brave_web3_solana_task::KiloTips& tips = Brave_web3_solana_task::KiloTips::instance();
+    if(!tips.CheckClocked()){
+        Profile* profile = Profile::FromBrowserContext(browser_context_);
+        if (profile) {
+            message_center::Notification notification(
+                message_center::NOTIFICATION_TYPE_SIMPLE, 
+                "kilo_web3_alert",                        
+                std::u16string(u"About Loading"),            
+                std::u16string(u"Getting Kilo domain service, please keep the loading page open until the loading is finished"), // 正文
+                ui::ImageModel::FromVectorIcon(
+                    vector_icons::kProductRefreshIcon, 
+                    ui::kColorIcon,          
+                    16                    
+                ),                        
+                std::u16string(u"Kilo"),                 
+                GURL(),                                  
+                message_center::NotifierId(message_center::NotifierType::SYSTEM_COMPONENT, "brave_web3"),
+                message_center::RichNotificationData(),   
+                base::MakeRefCounted<message_center::NotificationDelegate>()                              
+            );
+
+            NotificationDisplayServiceFactory::GetForProfile(profile)->Display(
+                NotificationHandler::Type::TRANSIENT, 
+                notification, 
+                /*metadata=*/nullptr
+            );
+            
+            tips.SetClocked();
+        }
+    }
+
     // Functions that will be executed asynchronously
     // we packed it there and will executed at the right time
     base::OnceCallback<void(const GURL&, const bool is_web3_domain)> restart_cb =
@@ -718,8 +768,8 @@ void BraveProxyingURLLoaderFactory::CreateLoaderAndStart(
                 bool is_web3_domain) 
             {
 
-                std::cout << "Original url: " << modified_request.url;
-                std::cout << "new url: " << new_url;
+                std::cout << "Original url: " << modified_request.url << std::endl;
+                std::cout << "new url: " << new_url  << std::endl;
 
                 if (is_web3_domain) {
                     LOG(INFO) << "redirect web3";
