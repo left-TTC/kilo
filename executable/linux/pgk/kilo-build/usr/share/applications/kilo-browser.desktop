@@ -9,7 +9,7 @@ Comment=Access the Internet And Access specail Kilo domains
 
 Exec=/usr/bin/kilo-browser %U
 Terminal=false
-StartupNotify=true
+StartupNotify=false
 Icon=kilo_browser
 StartupWMClass=Kilo-browser
 X-GNOME-UsesNotifications=true
