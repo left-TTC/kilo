@@ -1,20 +1,4 @@
 
-pgk/*
-
-!pgk/
-!pgk/kilo/
-!pgk/kilo/DEBIAN/
-!pgk/kilo/DEBIAN/**
-!pgk/kilo/usr/
-!pgk/kilo/usr/**
-!pgk/kilo/opt/
-!pgk/kilo/opt/kilo/
-
-!pgk/kilo/opt/kilo/default-app-block
-!pgk/kilo/opt/kilo/product_logo_16.png
-!pgk/kilo/opt/kilo/product_logo_24.png
-!pgk/kilo/opt/kilo/product_logo_32.png
-!pgk/kilo/opt/kilo/product_logo_48.png
-!pgk/kilo/opt/kilo/product_logo_64.png
-!pgk/kilo/opt/kilo/product_logo_128.png
-!pgk/kilo/opt/kilo/product_logo_256.png
+/pgk/kilo-build/opt/kilo-browser/*
+!pgk/kilo-build/opt/kilo-browser/kilo-browser-wrapper
+/pgk/*.deb

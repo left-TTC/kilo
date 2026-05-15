@@ -1,26 +1,27 @@
 #!/bin/bash
-#
 # Kilo browser desktop wrapper
-# Based on Chromium desktop wrapper
+# Based on the standard Chromium desktop wrapper
 
 set -e
 
-# Absolute path of this wrapper
+# Get absolute path of this wrapper
 WRAPPER="$(readlink -f "$0")"
 HERE="$(dirname "$WRAPPER")"
 
 # Let the binary know it was launched via wrapper
 export CHROME_WRAPPER="$WRAPPER"
-export CHROME_DEVEL_SANDBOX=/opt/kilo/chrome_sandbox
+
+# Specify the absolute path of the SUID sandbox.
+export CHROME_DEVEL_SANDBOX="/opt/kilo-browser/chrome_sandbox"
 
 # Prefer bundled xdg utils only if system ones are missing
 if ! command -v xdg-settings >/dev/null 2>&1; then
-  export PATH="$HERE:$PATH"
+    export PATH="$HERE:$PATH"
 else
-  # Ensure mimeapps.list exists (some xdg-mime versions require it)
-  xdg_app_dir="${XDG_DATA_HOME:-$HOME/.local/share/applications}"
-  mkdir -p "$xdg_app_dir"
-  [ -f "$xdg_app_dir/mimeapps.list" ] || touch "$xdg_app_dir/mimeapps.list"
+    # Ensure mimeapps.list exists (some xdg-mime versions require it)
+    xdg_app_dir="${XDG_DATA_HOME:-$HOME/.local/share/applications}"
+    mkdir -p "$xdg_app_dir"
+    [ -f "$xdg_app_dir/mimeapps.list" ] || touch "$xdg_app_dir/mimeapps.list"
 fi
 
 # Optional channel branding (can be removed safely)

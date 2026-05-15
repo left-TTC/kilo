@@ -1,0 +1,48 @@
+#!/bin/sh
+# postinst script for kilo-browser
+set -e
+
+# Only run during configuration
+if [ "$1" = "configure" ]; then
+
+    # Step-1: set chrome_sandbox permission
+    if [ -f /opt/kilo-browser/chrome_sandbox ]; then
+        chown root:root /opt/kilo-browser/chrome_sandbox
+        chmod 4755 /opt/kilo-browser/chrome_sandbox
+    fi
+
+    # Step-2: cp icon to hicolor folder
+    ICON_NAME="kilo_browser"
+    for size in 16 24 32 48 64 128 256; do
+        SRC="/opt/kilo-browser/product_logo_${size}.png"
+        DST="/usr/share/icons/hicolor/${size}x${size}/apps/${ICON_NAME}.png"
+
+        if [ -f "$SRC" ]; then
+            mkdir -p "$(dirname "$DST")"
+            install -m 0644 "$SRC" "$DST"
+        fi
+    done
+
+    # Step-3: refresh system and show kilo logo
+    if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+        gtk-update-icon-cache -f /usr/share/icons/hicolor || true
+    fi
+
+    # Step-4. Update the desktop database to enable the system to recognize the MimeTypes (default browser capabilities) registered in `kilo-browser.desktop`.
+    if command -v update-desktop-database >/dev/null 2>&1; then
+        update-desktop-database -q || true
+    fi
+
+    if command -v apparmor_parser >/dev/null 2>&1; then
+        apparmor_parser -r -T -W /etc/apparmor.d/kilo-browser || true
+    fi
+
+    # Step-5. System Alternative Browser Registration (Debian/Ubuntu Official Mechanism)
+    if command -v update-alternatives >/dev/null 2>&1; then
+        update-alternatives --install /usr/bin/x-www-browser x-www-browser /usr/bin/kilo-browser 200 || true
+        update-alternatives --install /usr/bin/gnome-www-browser gnome-www-browser /usr/bin/kilo-browser 200 || true
+    fi
+
+fi
+
+exit 0

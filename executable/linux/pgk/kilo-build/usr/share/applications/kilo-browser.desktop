@@ -1,15 +1,16 @@
 [Desktop Entry]
-Version=0.0.1
+Version=1.0
 Type=Application
 
-Name=Kilo
+# The application's name show in launch bar
+Name=Kilo Browser
 GenericName=Web Browser
-Comment=Access the Internet
+Comment=Access the Internet And Access specail Kilo domains
 
-Exec=/usr/bin/kilo %U
+Exec=/usr/bin/kilo-browser %U
 Terminal=false
 StartupNotify=true
-Icon=kilo
+Icon=kilo_browser
 StartupWMClass=Kilo-browser
 X-GNOME-UsesNotifications=true
 Categories=Network;WebBrowser;
@@ -20,8 +21,8 @@ Actions=new-window;new-private-window;
 
 [Desktop Action new-window]
 Name=New Window
-Exec=/usr/bin/kilo
+Exec=/usr/bin/kilo-browser
 
 [Desktop Action new-private-window]
 Name=New Incognito Window
-Exec=/usr/bin/kilo --incognito
+Exec=/usr/bin/kilo-browser --incognito

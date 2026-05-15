@@ -1,0 +1,22 @@
+#!/bin/sh
+# postrm script for kilo-browser
+set -e
+
+if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
+
+    # 1. Remove kilo-browser from the list of default browser candidates.
+    if command -v update-alternatives >/dev/null 2>&1; then
+        update-alternatives --remove x-www-browser /usr/bin/kilo-browser || true
+        update-alternatives --remove gnome-www-browser /usr/bin/kilo-browser || true
+    fi
+
+    # 2. Refresh the system cache and clear out any residual cache records.
+    if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+        gtk-update-icon-cache -f -t /usr/share/icons/hicolor || true
+    fi
+    if command -v update-desktop-database >/dev/null 2>&1; then
+        update-desktop-database -q || true
+    fi
+fi
+
+exit 0

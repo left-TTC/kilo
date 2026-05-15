@@ -1,5 +1,5 @@
-Package: Kilo
-Version: 0.0.1
+Package: kilo-browser
+Version: 0.0.2
 Section: utils
 Priority: optional
 Architecture: amd64

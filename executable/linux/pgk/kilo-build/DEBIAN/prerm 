@@ -1,0 +1,14 @@
+#!/bin/sh
+# prerm script for kilo-browser
+set -e
+
+if [ "$1" = "remove" ] || [ "$1" = "deconfigure" ]; then
+    
+    if command -v update-alternatives >/dev/null 2>&1; then
+        update-alternatives --remove x-www-browser /usr/bin/kilo-browser || true
+        update-alternatives --remove gnome-www-browser /usr/bin/kilo-browser || true
+    fi
+
+fi
+
+exit 0
