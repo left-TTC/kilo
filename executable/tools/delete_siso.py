@@ -4,7 +4,7 @@ import shutil
 # -----------------------------
 # 配置部分
 # -----------------------------
-TARGET_DIR = r"D:\Release"  # 要清理的目录
+TARGET_DIR = r"/Users/left/Documents/project/kilo/mac-pack"  # 要清理的目录
 TEMP_ISOLATE = os.path.join(TARGET_DIR, "_siso_backup")  # 隔离目录
 RUN_BACKUP = True  # True 表示保留隔离文件，可手动恢复
 

@@ -8,3 +8,7 @@ yarn-error.log*
 
 .vscode/
 .idea/
+
+*.cer
+*.p12
+*.certSigningRequest

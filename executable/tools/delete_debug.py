@@ -5,7 +5,7 @@ import shutil
 # -----------------------------
 # 配置部分
 # -----------------------------
-RELEASE_DIR = r"D:\Release"  # 你的 Release 输出目录
+RELEASE_DIR = r"/Users/left/Documents/project/kilo/mac-pack"  # 你的 Release 输出目录
 
 # 需要保留的文件夹
 KEEP_FOLDERS = ["resources", "locales", "WidevineCdm"]
