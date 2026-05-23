@@ -82,6 +82,7 @@ export function App() {
                 {
                     widgetLayoutReady && <>
                         <WidgetStack name='left' tabs={['stats']} />
+                        <WidgetStack name='right' tabs={['wns']} />
                     </>
                 }
             </div>

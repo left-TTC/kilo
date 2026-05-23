@@ -57,6 +57,9 @@ namespace Kilo_Gate {
         bool if_able() const;
         void set_able(size_t use);
 
+        bool IfReloaded() const;
+        void SetReloaded();
+
     private:
         friend class base::NoDestructor<RpcAgent>;
         RpcAgent();
@@ -68,6 +71,9 @@ namespace Kilo_Gate {
         size_t can_use = 10086;
         size_t failed = 10086;
         bool now_able = false;
+
+        // Record the new tab page's reload action
+        bool new_tab_page_reloaded = false;
     };
 
     // // load rpc agent website

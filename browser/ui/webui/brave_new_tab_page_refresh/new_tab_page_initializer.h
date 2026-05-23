@@ -11,8 +11,8 @@
 #include "base/memory/raw_ptr.h"
 #include "base/memory/raw_ref.h"
 
-#include "chrome/browser/browser_process.h"
-#include "brave/components/decentralized_dns/core/utils.h"
+#include "brave/browser/net/brave_web3_gate.h"
+
 
 namespace content {
 class WebUI;

@@ -3,10 +3,23 @@ import { style } from './wns_widget.style'
 import { loadTimeData } from '$web-common/loadTimeData';
 
 export function WnsWidget() {
+    const wnsReloaded = loadTimeData.getBoolean("reloaded")
     const wnsEnabled = loadTimeData.getBoolean("ifKilo")
 
+    if(!wnsReloaded){
+        // Reload the page
+        console.log("ready to reload the page")
+        const newWin = window.open(window.location.href, '_blank')
+
+if (newWin) {
+  window.close()
+}
+    }else {
+        console.log("reloaded")
+    }
+
     function openKiloGuide() {
-        window.open("https://dns.kilo", "_blank")
+        window.open("https://dns.rust", "_blank")
     }
 
     function openSetGate() {
