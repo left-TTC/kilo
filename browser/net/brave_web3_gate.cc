@@ -173,16 +173,6 @@ namespace Kilo_Gate {
         can_use = use;
     }
 
-    bool RpcAgent::IfReloaded() const{
-        base::AutoLock lock(lock_);
-        return new_tab_page_reloaded;
-    }
-    
-    void RpcAgent::SetReloaded(){
-        base::AutoLock lock(lock_);
-        new_tab_page_reloaded = true;
-    }
-
 
     // class IPFSGate
     IPFSGate& IPFSGate::instance() {

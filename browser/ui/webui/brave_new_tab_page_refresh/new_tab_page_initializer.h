@@ -11,9 +11,6 @@
 #include "base/memory/raw_ptr.h"
 #include "base/memory/raw_ref.h"
 
-#include "brave/browser/net/brave_web3_gate.h"
-
-
 namespace content {
 class WebUI;
 class WebUIDataSource;

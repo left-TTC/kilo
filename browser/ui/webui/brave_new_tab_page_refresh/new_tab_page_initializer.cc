@@ -172,23 +172,6 @@ void NewTabPageInitializer::AddLoadTimeValues() {
                       !prefs->GetBoolean(kBraveTalkDisabledByPolicy));
 
   source_->AddInteger("maxCustomTopSites", ntp_tiles::kMaxNumCustomLinks);
-
-    bool if_kilo = false;
-    Kilo_Gate::RpcAgent& rpcs = Kilo_Gate::RpcAgent::instance();
-
-    if(rpcs.if_able()){
-        if_kilo = true;
-    } 
-    source_->AddBoolean("ifKilo", if_kilo);
-
-    std::cout << "5.24: Load!!" << std::endl;
-
-    if(!rpcs.IfReloaded()){
-        source_->AddBoolean("reloaded", false);
-        rpcs.SetReloaded();
-    }else {
-        source_->AddBoolean("reloaded", true);
-    }
     
 }
 

@@ -9,167 +9,161 @@ import { scoped } from '../../lib/scoped_css'
 export const style = scoped.css`
   & {
     position: relative;
-    color: ${color.text.primary};
-    border-radius: 20px;
-    background: ${color.material.thin};
-    backdrop-filter: blur(40px) saturate(1.5);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
 
     display: flex;
     flex-direction: column;
-    padding: 20px;
-    gap: 16px;
-    min-width: 240px;
+    gap: 18px;
 
-    animation: fadeIn 0.4s ease-out, linear widget-scroll-fade both;
-    animation-timeline: auto, --ntp-main-view-timeline;
-    animation-range: normal, exit-crossing 10% exit-crossing 100%;
+    width: 100%;
+    min-width: 260px;
+
+    padding: 20px;
+
+    color: ${color.text.primary};
+
+    border-radius: 20px;
+
+    background: ${color.material.thin};
+
+    backdrop-filter: blur(40px) saturate(1.5);
+
+    border: 1px solid rgba(255, 255, 255, 0.08);
+
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.14);
+
+    animation:
+      fadeIn 0.35s ease-out,
+      linear widget-scroll-fade both;
+
+    animation-timeline:
+      auto,
+      --ntp-main-view-timeline;
+
+    animation-range:
+      normal,
+      exit-crossing 10% exit-crossing 100%;
   }
 
   .wns-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    opacity: 0.9;
+    gap: 12px;
   }
 
   .wns-header svg {
-    filter: drop-shadow(0 0 4px rgba(255, 80, 0, 0.3));
+    flex-shrink: 0;
+
+    filter:
+      drop-shadow(0 0 8px rgba(255, 120, 0, 0.25));
   }
 
-  .wns-status {
+  .header-text {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    font-weight: 500;
-    padding: 8px 12px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    width: fit-content;
+    flex-direction: column;
+    gap: 2px;
   }
 
-  .wns-status strong {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+  .header-text span {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
   }
 
-  .wns-status strong::before {
-    content: "";
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    display: inline-block;
-  }
+  .header-text p {
+    margin: 0;
 
-  /* Enabled 状态 */
-  .wns-status.enabled strong {
-    color: #4ade80;
-  }
+    font-size: 12px;
+    line-height: 1.4;
 
-  .wns-status.enabled strong::before {
-    background: #4ade80;
-    box-shadow: 0 0 8px #4ade80;
-  }
-
-  /* Disabled 状态 */
-  .wns-status.disabled strong {
-    color: #fb7185;
-  }
-
-  .wns-status.disabled strong::before {
-    background: #fb7185;
-  }
-
-  /* Checking 状态 */
-  .wns-status.checking strong {
-    color: #fbbf24;
-  }
-
-  .wns-status.checking strong::before {
-    background: #fbbf24;
-    animation: pulse 1.5s infinite;
+    opacity: 0.7;
   }
 
   .wns-actions {
-    display: flex;
+    display: grid;
+
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
     gap: 10px;
   }
 
   button {
-    flex: 1;
+    min-width: 0;
+    width: 100%;
+
     border: none;
-    border-radius: 10px;
-    padding: 10px 14px;
-    font-size: 12px;
+    border-radius: 12px;
+
+    padding: 12px 14px;
+
+    font-size: 13px;
     font-weight: 600;
+
     cursor: pointer;
-    background: rgba(255, 255, 255, 0.1);
+
     color: ${color.text.primary};
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+
+    background:
+      rgba(255, 255, 255, 0.08);
+
+    border:
+      1px solid rgba(255, 255, 255, 0.06);
+
+    transition:
+      background 0.2s ease,
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
   }
 
   button:hover {
-    background: rgba(255, 255, 255, 0.18);
+    background:
+      rgba(255, 255, 255, 0.16);
+
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+    box-shadow:
+      0 4px 12px rgba(0, 0, 0, 0.12);
   }
 
   button:active {
     transform: translateY(0);
   }
 
-  @keyframes pulse {
-    0% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(1.2); }
-    100% { opacity: 1; transform: scale(1); }
-  }
-
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   @keyframes widget-scroll-fade {
-    from { opacity: 1; }
-    to { opacity: 0; }
-  }
-
-    h1 {
-        font-size: 10px;
-        font-weight: 500;
-        line-height: 1.5;
-        margin: 0;
-        opacity: 0.75;
-        max-width: 220px;
+    from {
+      opacity: 1;
     }
 
-    .status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    display: inline-block;
-    margin: 0 4px;
+    to {
+      opacity: 0;
+    }
   }
 
-  .status-dot.enabled {
-    background: #4ade80;
-    box-shadow: 0 0 6px rgba(74, 222, 128, 0.8);
-  }
+  @media (max-width: 768px) {
+    & {
+      padding: 16px;
+      min-width: unset;
+    }
 
-  .status-dot.disabled {
-    background: #fb7185;
-  }
+    .wns-actions {
+      grid-template-columns: 1fr;
+    }
 
-  .status-dot.checking {
-    background: #fbbf24;
-    animation: pulse 1.5s infinite;
+    button {
+      font-size: 12px;
+      padding: 11px 12px;
+    }
   }
 `

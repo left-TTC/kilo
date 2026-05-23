@@ -57,9 +57,6 @@ namespace Kilo_Gate {
         bool if_able() const;
         void set_able(size_t use);
 
-        bool IfReloaded() const;
-        void SetReloaded();
-
     private:
         friend class base::NoDestructor<RpcAgent>;
         RpcAgent();

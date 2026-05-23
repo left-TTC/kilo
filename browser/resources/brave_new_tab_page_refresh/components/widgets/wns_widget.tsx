@@ -1,86 +1,64 @@
 import * as React from 'react'
 import { style } from './wns_widget.style'
-import { loadTimeData } from '$web-common/loadTimeData';
 
 export function WnsWidget() {
-    const wnsReloaded = loadTimeData.getBoolean("reloaded")
-    const wnsEnabled = loadTimeData.getBoolean("ifKilo")
+    function openDnsSite() {
+        window.open('https://dns.rust', '_blank')
+    }
 
-    if(!wnsReloaded){
-        // Reload the page
-        console.log("ready to reload the page")
-        const newWin = window.open(window.location.href, '_blank')
+    function openDnsGate() {
+        window.open('chrome://settings/web3', '_blank')
+    }
 
-if (newWin) {
-  window.close()
-}
-    }else {
-        console.log("reloaded")
+    function openKiloResource() {
+        window.open('https://github.com/left-TTC/kilo-browser.git', '_blank')
     }
 
     function openKiloGuide() {
-        window.open("https://dns.rust", "_blank")
-    }
-
-    function openSetGate() {
-        window.open("chrome://settings/web3", "_blank");
+        window.open('https://dns.rust', '_blank')
     }
 
     return (
         <div data-css-scope={style.scope}>
-            <div className="wns-header">
+            <div className='wns-header'>
                 <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                    width='20'
+                    height='20'
+                    viewBox='0 0 24 24'
+                    fill='none'
+                    stroke='currentColor'
+                    strokeWidth='2'
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
                 >
-                    <circle cx="6" cy="12" r="2"></circle>
-                    <circle cx="18" cy="6" r="2"></circle>
-                    <circle cx="18" cy="18" r="2"></circle>
-                    <line x1="8" y1="12" x2="16" y2="6"></line>
-                    <line x1="8" y1="12" x2="16" y2="18"></line>
+                    <circle cx='6' cy='12' r='2' />
+                    <circle cx='18' cy='6' r='2' />
+                    <circle cx='18' cy='18' r='2' />
+                    <line x1='8' y1='12' x2='16' y2='6' />
+                    <line x1='8' y1='12' x2='16' y2='18' />
                 </svg>
-                <span>WNS</span>
-            </div>
 
-            <div style={{display:'flex', flexDirection:'row', justifyContent:'space-between'}}>
-                <div className="wns-status">
-                    <span
-                        className={`status-dot ${
-                            wnsEnabled === null
-                                ? "checking"
-                                : wnsEnabled
-                                ? "enabled"
-                                : "disabled"
-                        }`}
-                    />
-                    Status:{" "}
-                    <strong>
-                        {wnsEnabled === null
-                            ? "Checking..."
-                            : wnsEnabled
-                            ? "Enabled"
-                            : "Disabled"}
-                    </strong>
+                <div className='header-text'>
+                    <span>WNS</span>
+                    <p>Web Name Service tools and shortcuts</p>
                 </div>
-                <h1>
-                    Enabled means Kilo domains can be resolved. If access is not possible, please adjust the gate settings.
-                </h1>
             </div>
 
-            <div className="wns-actions">
-
-                <button onClick={openKiloGuide}>
-                    Learn how to use Kilo
+            <div className='wns-actions'>
+                <button onClick={openDnsSite}>
+                    Go DNS Site
                 </button>
 
-                <button onClick={openSetGate}>
-                    Manage dns gate
+                <button onClick={openDnsGate}>
+                    Manage DNS Gate
+                </button>
+
+                <button onClick={openKiloResource}>
+                    Kilo Browser Resources
+                </button>
+
+                <button onClick={openKiloGuide}>
+                    Learn Kilo
                 </button>
             </div>
         </div>
