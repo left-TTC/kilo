@@ -13,5 +13,6 @@
     "renderer": "src/brave/renderer",
     "resource_browser_string": "src/brave",
     "resource_internal_string": "src/brave",
-    "ui": "src/ui"
+    "ui": "src/ui",
+    "common": "src/brave/common"
 }
